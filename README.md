@@ -1,6 +1,6 @@
 # Quiz-Party
 
-Selbst gehostetes Party-Quiz: Die Spielleitung steuert am Beamer oder TV, die Teams spielen am Handy. Jede Runde hat ihren eigenen QR-Code, nach jeder Runde gibt es ein Zwischenergebnis, am Ende ein Siegerpodest.
+Selbst gehostetes Party-Quiz: Die Spielleitung steuert am Beamer oder TV, die Teams spielen am Handy. Gescannt wird nur einmal zu Beginn, nach jeder Runde gibt es ein Zwischenergebnis, am Ende ein Siegerpodest.
 
 Keine Datenbank, keine Cloud, keine Tracker, keine externen Schriften. Ein Container, ein Ordner mit zwei Dateien.
 
@@ -10,11 +10,13 @@ Keine Datenbank, keine Cloud, keine Tracker, keine externen Schriften. Ein Conta
 # Ordner data/ muss für den Container-Benutzer (UID 1000) beschreibbar sein
 sudo chown -R 1000:1000 data
 
-# PIN in docker-compose.yml ändern, dann:
+# PIN festlegen: Vorlage kopieren und HOST_PIN in .env ändern
+cp .env.example .env
+
 docker compose up -d --build
 ```
 
-- **Spielleitung:** `https://<deine-domain>/host` (PIN aus `docker-compose.yml`)
+- **Spielleitung:** `https://<deine-domain>/host` (PIN aus `.env`)
 - **Teams:** scannen nur den QR-Code am Bildschirm, keine Adresse nötig
 
 Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach auf diesen Port weiterleiten. Der QR-Code verwendet die Adresse, unter der du `/host` aufrufst. Läuft das hinter einem Proxy mit anderer Adresse, `PUBLIC_URL` in `docker-compose.yml` setzen (z. B. `https://quiz.example.at`).
@@ -28,7 +30,7 @@ Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach au
 3. **Leertaste** (oder „Quiz starten“) startet die erste Frage. Die Handys zeigen die Antwortknöpfe, der Beamer Frage und Countdown.
 4. Wenn alle Teams geantwortet haben oder die Zeit um ist, wird automatisch aufgelöst: richtige Antwort, Verteilung der Antworten, Funfact.
 5. Nach der letzten Frage einer Runde: Zwischenergebnis mit Auf- und Absteigern.
-6. Nächste Runde: **neuer QR-Code**. Teams müssen ihn scannen, um weiterzuspielen. Der Teamname bleibt am Handy gespeichert, es reicht also scannen.
+6. Nächste Runde: Alle Teams spielen automatisch weiter, kein erneutes Scannen nötig.
 7. Nach der letzten Runde: Siegerehrung mit Podest.
 
 **Tasten:** Leertaste / Enter / → = weiter · Q = QR-Code groß einblenden (für Nachzügler) · F = Vollbild
