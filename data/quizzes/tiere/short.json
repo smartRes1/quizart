@@ -1,0 +1,51 @@
+{
+  "title": "Tierisch gut",
+  "settings": {
+    "secondsPerQuestion": 25,
+    "pointsPerCorrect": 1
+  },
+  "rounds": [
+    {
+      "name": "Tierisch gut",
+      "subtitle": "Kuriose Fakten aus dem Tierreich",
+      "questions": [
+        {
+          "q": "Wie viele Herzen hat ein Oktopus?",
+          "options": ["Eines", "Zwei", "Drei"],
+          "correct": "C",
+          "fact": "Zwei pumpen Blut durch die Kiemen, eines durch den Körper. Sein Blut ist übrigens blau."
+        },
+        {
+          "q": "Welche Farbe hat die Haut unter dem Fell eines Eisbären?",
+          "options": ["Weiß", "Schwarz", "Rosa"],
+          "correct": "B",
+          "fact": "Die dunkle Haut nimmt Wärme auf. Die Haare selbst sind farblos und wirken nur weiß."
+        },
+        {
+          "q": "Welches ist das schnellste Landtier?",
+          "options": ["Gepard", "Gabelbock", "Springbock"],
+          "correct": "A",
+          "fact": "Geparden schaffen rund 100 km/h, halten das aber nur ein paar hundert Meter durch."
+        },
+        {
+          "q": "Wie lange ist eine Elefantenkuh trächtig?",
+          "options": ["etwa 9 Monate", "etwa 22 Monate", "etwa 14 Monate"],
+          "correct": "B",
+          "fact": "Das ist die längste Tragzeit aller Landsäugetiere."
+        },
+        {
+          "q": "Welches Tier hat Fingerabdrücke, die den menschlichen zum Verwechseln ähnlich sind?",
+          "options": ["Faultier", "Waschbär", "Koala"],
+          "correct": "C",
+          "fact": "Selbst unter dem Mikroskop sind sie kaum von menschlichen zu unterscheiden."
+        },
+        {
+          "q": "Was ist am Wombat einzigartig?",
+          "options": ["Sein würfelförmiger Kot", "Seine leuchtend blaue Zunge", "Sein Winterschlaf unter Wasser"],
+          "correct": "A",
+          "fact": "Wombats markieren mit den Würfeln ihr Revier, gern auf Steinen. Würfel rollen nicht so leicht weg."
+        }
+      ]
+    }
+  ]
+}

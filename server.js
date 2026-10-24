@@ -1,6 +1,7 @@
 // Quiz-Party – selbst gehostetes Party-Quiz
 // Teams spielen am Handy, die Spielleitung steuert am Beamer.
-// Keine Datenbank, keine externen Dienste: Spielstand liegt in data/state.json.
+// Keine Datenbank, keine externen Dienste: Spielstand liegt in data/state.json,
+// die Fragen liegen als Pool in data/quizzes/<thema>/<short|mid|long>.json.
 
 'use strict';
 
@@ -12,27 +13,34 @@ const QRCode = require('qrcode');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const QUESTIONS_FILE = process.env.QUESTIONS_FILE || path.join(DATA_DIR, 'questions.json');
+const QUIZ_DIR = process.env.QUIZ_DIR || path.join(DATA_DIR, 'quizzes');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
 const PUBLIC_URL = (process.env.PUBLIC_URL || '').replace(/\/+$/, '');
 const MAX_TEAMS = parseInt(process.env.MAX_TEAMS || '60', 10);
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 let HOST_PIN = process.env.HOST_PIN;
-if (!HOST_PIN) {
+if (!HOST_PIN && !process.argv.includes('--check')) {
   HOST_PIN = String(crypto.randomInt(1000, 10000));
   console.log(`\n  Kein HOST_PIN gesetzt – PIN für die Spielleitung: ${HOST_PIN}\n`);
 }
 
 // ---------------------------------------------------------------- Fragen
 
-function loadQuestions() {
-  const raw = fs.readFileSync(QUESTIONS_FILE, 'utf8');
+const DURATIONS = { short: 'Kurz', mid: 'Mittel', long: 'Lang' };
+// Erlaubte Spieldauer in Minuten je Länge
+const DURATION_FITS = { short: (m) => m >= 2 && m <= 6, mid: (m) => m >= 7 && m <= 15, long: (m) => m > 15 };
+// Schätzung pro Frage: Fragezeit + Auflösung/Funfact, pro Runde: Intro + Zwischenergebnis
+const REVEAL_SECONDS = 20;
+const ROUND_SECONDS = 45;
+
+function loadQuestions(file) {
+  const raw = fs.readFileSync(file, 'utf8');
   let data;
   try {
     data = JSON.parse(raw);
   } catch (e) {
-    throw new Error(`questions.json ist kein gültiges JSON: ${e.message}`);
+    throw new Error(`${path.relative(QUIZ_DIR, file)} ist kein gültiges JSON: ${e.message}`);
   }
   const errors = [];
   if (!Array.isArray(data.rounds) || data.rounds.length === 0) errors.push('Es gibt keine "rounds".');
@@ -71,7 +79,66 @@ function loadQuestions() {
   };
 }
 
-let quiz = loadQuestions();
+const questionCount = (qz) => qz.rounds.reduce((s, r) => s + r.questions.length, 0);
+
+function estimateMinutes(qz) {
+  const secs = qz.rounds.reduce((s, r) => s + ROUND_SECONDS + r.questions.reduce((t, q) => t + q.seconds + REVEAL_SECONDS, 0), 0);
+  return Math.round(secs / 60);
+}
+
+// Alle Quizze im Pool, auch fehlerhafte (mit `error`), damit das Menü zeigt, was nicht passt
+function listQuizzes() {
+  let topics = [];
+  try {
+    topics = fs.readdirSync(QUIZ_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && /^[\w-]+$/.test(d.name))
+      .map((d) => d.name)
+      .sort();
+  } catch {}
+  const list = [];
+  for (const topic of topics) {
+    for (const duration of Object.keys(DURATIONS)) {
+      const file = path.join(QUIZ_DIR, topic, `${duration}.json`);
+      if (!fs.existsSync(file)) continue;
+      const item = { id: `${topic}/${duration}`, topic, duration, durationLabel: DURATIONS[duration] };
+      try {
+        const qz = loadQuestions(file);
+        Object.assign(item, { title: qz.title, rounds: qz.rounds.length, questions: questionCount(qz), minutes: estimateMinutes(qz) });
+      } catch (e) {
+        item.error = e.message;
+      }
+      list.push(item);
+    }
+  }
+  return list;
+}
+
+function loadQuiz(id) {
+  const m = /^([\w-]+)\/(short|mid|long)$/.exec(String(id || ''));
+  const file = m && path.join(QUIZ_DIR, m[1], `${m[2]}.json`);
+  if (!file || !fs.existsSync(file)) throw new Error(`Quiz „${id}“ gibt es nicht.`);
+  return { ...loadQuestions(file), id };
+}
+
+// npm run check: Pool prüfen, ohne den Server zu starten
+if (process.argv.includes('--check')) {
+  const list = listQuizzes();
+  if (!list.length) console.log(`Keine Quizze in ${QUIZ_DIR} gefunden.`);
+  for (const q of list) {
+    if (q.error) { console.log(`✗ ${q.id}\n  ${q.error.replace(/\n/g, '\n  ')}`); continue; }
+    const fit = DURATION_FITS[q.duration](q.minutes) ? '' : `  ⚠ passt nicht zu „${q.durationLabel}“`;
+    console.log(`✓ ${q.id}: ${q.rounds} Runde(n), ${q.questions} Fragen, ca. ${q.minutes} Min${fit}`);
+  }
+  process.exit(list.length && list.every((q) => !q.error) ? 0 : 1);
+}
+
+function defaultQuizId() {
+  const first = listQuizzes().find((q) => !q.error);
+  if (!first) throw new Error(`Kein gültiges Quiz in ${QUIZ_DIR} gefunden (erwartet: <thema>/short.json, mid.json oder long.json).`);
+  return first.id;
+}
+
+let quiz = null;
 
 // ---------------------------------------------------------------- Spielstand
 
@@ -86,6 +153,7 @@ function newCode() {
 function freshState(keepTeams) {
   const teams = keepTeams && state ? state.teams.map((t) => ({ ...t, rounds: [] })) : [];
   return {
+    quiz: quiz.id, // "<thema>/<short|mid|long>"
     phase: 'intro', // intro | question | reveal | standings | final
     round: 0,
     question: -1,
@@ -102,10 +170,12 @@ function freshState(keepTeams) {
 let state = null;
 try {
   state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+  quiz = loadQuiz(state.quiz);
   if (!Array.isArray(state.codes) || state.codes.length !== quiz.rounds.length) throw new Error('Rundenzahl geändert');
   state.seen = state.seen || {};
-  console.log('Spielstand wiederhergestellt.');
+  console.log(`Spielstand wiederhergestellt (${quiz.id}).`);
 } catch {
+  quiz = loadQuiz(defaultQuizId());
   state = freshState(false);
 }
 
@@ -123,6 +193,8 @@ function save() {
 const key = (r, q) => `${r}:${q}`;
 const currentQ = () => (state.question >= 0 ? quiz.rounds[state.round].questions[state.question] : null);
 const teamsInRound = (r) => state.teams.filter((t) => t.rounds.includes(r));
+// Quiz wechseln oder neu laden geht nur, solange noch keine Frage gespielt wurde
+const notStarted = () => state.round === 0 && state.phase === 'intro' && state.revealed.length === 0;
 
 // Punkte aus allen aufgelösten Fragen (optional nur bis vor Runde `beforeRound`)
 function ranking(beforeRound = Infinity) {
@@ -309,7 +381,8 @@ function hostView(req) {
     // Höchstmögliche Punkte bis einschließlich der aktuellen Runde (für „x von y“)
     p.maxPoints = quiz.rounds.slice(0, state.round + 1).reduce((s, r) => s + r.questions.reduce((t, q) => t + q.points, 0), 0);
   }
-  p.canReload = state.round === 0 && state.phase === 'intro' && state.revealed.length === 0;
+  p.canReload = notStarted();
+  p.quizId = quiz.id;
   return p;
 }
 
@@ -443,6 +516,7 @@ const server = http.createServer(async (req, res) => {
       if (!pinOk(req)) return send(res, 403, { error: 'Falscher PIN' });
       const action = p.slice('/api/host/'.length);
       if (action === 'state' && req.method === 'GET') return send(res, 200, hostView(req));
+      if (action === 'quizzes' && req.method === 'GET') return send(res, 200, listQuizzes());
       if (req.method !== 'POST') return send(res, 405, { error: 'method' });
       const body = await readBody(req);
       if (action === 'next') { next(); return send(res, 200, hostView(req)); }
@@ -452,18 +526,19 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, hostView(req));
       }
       if (action === 'reset') {
-        try { quiz = loadQuestions(); } catch (e) { return send(res, 400, { error: e.message }); }
+        try { quiz = loadQuiz(body.quiz || quiz.id); } catch (e) { return send(res, 400, { error: e.message }); }
         state = freshState(!!body.keepTeams);
         save();
         return send(res, 200, hostView(req));
       }
-      if (action === 'reload') {
-        if (!(state.round === 0 && state.phase === 'intro' && state.revealed.length === 0)) return send(res, 409, { error: 'Fragen können nur vor dem Spielstart neu geladen werden.' });
-        try { quiz = loadQuestions(); } catch (e) { return send(res, 400, { error: e.message }); }
+      if (action === 'reload' || action === 'select') {
+        // select: anderes Quiz aus dem Pool, Teams und QR-Code bleiben
+        if (!notStarted()) return send(res, 409, { error: 'Das Quiz kann nur vor dem Spielstart gewechselt oder neu geladen werden. Sonst „Neues Spiel“ wählen.' });
+        try { quiz = loadQuiz(action === 'select' ? body.id : quiz.id); } catch (e) { return send(res, 400, { error: e.message }); }
+        state.quiz = quiz.id;
         state.codes = quiz.rounds.map(() => state.codes[0] || newCode());
         save();
-        const n = quiz.rounds.reduce((s, r) => s + r.questions.length, 0);
-        return send(res, 200, { ok: true, message: `${quiz.rounds.length} Runden mit ${n} Fragen geladen.` });
+        return send(res, 200, { ok: true, message: `${quiz.title}: ${quiz.rounds.length} Runde(n) mit ${questionCount(quiz)} Fragen geladen.`, state: hostView(req) });
       }
       return send(res, 404, { error: 'unknown action' });
     }
@@ -475,7 +550,6 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  const n = quiz.rounds.reduce((s, r) => s + r.questions.length, 0);
-  console.log(`Quiz läuft auf Port ${PORT} – ${quiz.rounds.length} Runden, ${n} Fragen.`);
+  console.log(`Quiz läuft auf Port ${PORT} – ${quiz.id}: ${quiz.rounds.length} Runden, ${questionCount(quiz)} Fragen.`);
   console.log(`Spielleitung: ${PUBLIC_URL || 'http://localhost:' + PORT}/host`);
 });

@@ -1,0 +1,177 @@
+{
+  "title": "Wien · Österreich · Südafrika",
+  "settings": {
+    "secondsPerQuestion": 25,
+    "pointsPerCorrect": 1
+  },
+  "rounds": [
+    {
+      "name": "Typisch Wien",
+      "subtitle": "Morbider Charme, Würstel und Wiener Eigenheiten",
+      "questions": [
+        {
+          "q": "Welches Wasser rauscht in Wien durch die Klospülung?",
+          "options": [
+            "Quellwasser aus den Alpen",
+            "Gefiltertes Donauwasser",
+            "Grundwasser aus dem Marchfeld"
+          ],
+          "correct": "A",
+          "fact": "Es ist dasselbe Hochquellwasser wie aus dem Küchenhahn, aus dem Gebiet von Rax, Schneeberg und Hochschwab."
+        },
+        {
+          "q": "Welche Sparmaßnahme ordnete Kaiser Joseph II. 1784 für Begräbnisse an?",
+          "options": [
+            "Begräbnisse nur noch nachts, um Kerzen zu sparen",
+            "Einen wiederverwendbaren Sarg mit Klappboden",
+            "Särge nur noch aus ungehobeltem Fichtenholz"
+          ],
+          "correct": "B",
+          "fact": "Der Tote fiel durch die Klappe ins Grab, der Sarg kam zurück. Nach Protesten der Wiener wurde er nach einem halben Jahr wieder abgeschafft. Ein Exemplar steht im Bestattungsmuseum."
+        },
+        {
+          "q": "Wie viel Weinbaufläche liegt innerhalb der Wiener Stadtgrenzen?",
+          "options": [
+            "rund 60 Hektar",
+            "rund 2.500 Hektar",
+            "rund 600 Hektar"
+          ],
+          "correct": "C",
+          "fact": "Für eine Millionenstadt ist das weltweit einzigartig. Typisch ist der „Wiener Gemischte Satz“."
+        },
+        {
+          "q": "Seit 2019 gilt in allen Wiener U-Bahnen ein Essverbot. Was war der Auslöser?",
+          "options": [
+            "Beschwerden über Essensgerüche",
+            "Eine Rattenplage in den Stationen",
+            "Explodierende Reinigungskosten"
+          ],
+          "correct": "A",
+          "fact": "Döner, Leberkässemmel und Pizza waren den Fahrgästen zu viel. Getestet wurde das Verbot 2018 zuerst auf der U6."
+        },
+        {
+          "q": "Woraus muss ein echtes „Wiener Schnitzel“ laut Lebensmittelcodex sein?",
+          "options": [
+            "Schweinefleisch",
+            "Kalbfleisch",
+            "Rindfleisch"
+          ],
+          "correct": "B",
+          "fact": "Ist es aus Schwein, darf es nur „Schnitzel Wiener Art“ heißen."
+        }
+      ]
+    },
+    {
+      "name": "Quer durch Österreich",
+      "subtitle": "Berge, Erfinder und historische Absurditäten",
+      "questions": [
+        {
+          "q": "In welchem Land steht eine originalgetreue Kopie von Hallstatt?",
+          "options": [
+            "Japan",
+            "China",
+            "Vereinigte Arabische Emirate"
+          ],
+          "correct": "B",
+          "fact": "In der Provinz Guangdong, eröffnet 2012."
+        },
+        {
+          "q": "Warum benannte sich das oberösterreichische Fucking 2021 in Fugging um?",
+          "options": [
+            "Weil die Ortstafeln ständig gestohlen wurden",
+            "Wegen einer EU-Richtlinie",
+            "Um die Dialekt-Aussprache abzubilden"
+          ],
+          "correct": "A",
+          "fact": "Englischsprachige Touristen klauten die Tafeln oder posierten unanständig davor. Die Gemeinde hatte genug."
+        },
+        {
+          "q": "Wo verläuft die Staatsgrenze im Bodensee?",
+          "options": [
+            "Genau in der Seemitte",
+            "Nirgends, sie wurde nie festgelegt",
+            "Aufgeteilt nach Länge der Uferlinie"
+          ],
+          "correct": "B",
+          "fact": "Österreich, Deutschland und die Schweiz haben sich nie auf eine Grenze im See geeinigt."
+        },
+        {
+          "q": "Wie kommt man mit dem Auto ins Kleinwalsertal in Vorarlberg?",
+          "options": [
+            "Über eine Passstraße aus dem Bregenzerwald",
+            "Nur über die Schweiz",
+            "Nur über Deutschland"
+          ],
+          "correct": "C",
+          "fact": "Eine Straße aus Österreich gibt es bis heute nicht. Bis zur Euro-Einführung zahlte man im Tal mit D-Mark."
+        },
+        {
+          "q": "Der Salzburger Christian Doppler erklärte 1842 ein Phänomen, das heute jeder kennt. Welches?",
+          "options": [
+            "Warum sich Wasser im Abfluss im Kreis dreht",
+            "Warum eine Sirene beim Vorbeifahren tiefer klingt",
+            "Warum ein Strohhalm im Wasserglas geknickt aussieht"
+          ],
+          "correct": "B",
+          "fact": "Bewiesen hat es 1845 ein Niederländer: Buys Ballot ließ Trompeter auf einem fahrenden Zug spielen. Dass Wasser im Abfluss je nach Erdhalbkugel anders dreht, ist übrigens ein Mythos."
+        }
+      ]
+    },
+    {
+      "name": "Wildes Südafrika",
+      "subtitle": "Pinguine am Strand, 12 Sprachen und verrückte Natur",
+      "questions": [
+        {
+          "q": "Der Klippschliefer („Dassie“) ist ein pelziges Tier von Kaninchengröße. Wer zählt zu seinen nächsten lebenden Verwandten?",
+          "options": [
+            "Der Elefant",
+            "Das Murmeltier",
+            "Das Meerschweinchen"
+          ],
+          "correct": "A",
+          "fact": "Klingt absurd, ist aber Stand der Biologie: Schliefer, Elefanten und Seekühe stammen von gemeinsamen Vorfahren ab."
+        },
+        {
+          "q": "Welches Land ist vollständig von Südafrika umschlossen?",
+          "options": [
+            "Eswatini",
+            "Lesotho",
+            "Botswana"
+          ],
+          "correct": "B",
+          "fact": "Lesotho liegt komplett über 1.000 m. Eswatini grenzt zusätzlich an Mosambik."
+        },
+        {
+          "q": "Wie viele Hauptstädte hat Südafrika?",
+          "options": [
+            "Eine",
+            "Zwei",
+            "Drei"
+          ],
+          "correct": "C",
+          "fact": "Pretoria (Regierung), Kapstadt (Parlament) und Bloemfontein (Oberstes Gericht)."
+        },
+        {
+          "q": "Wie viele Amtssprachen hat Südafrika?",
+          "options": [
+            "12",
+            "6",
+            "9"
+          ],
+          "correct": "A",
+          "fact": "Seit 2023 ist auch die südafrikanische Gebärdensprache Amtssprache."
+        },
+        {
+          "q": "Wie viel Wasser durfte jeder Kapstädter 2018 vor dem drohenden „Day Zero“ pro Tag verbrauchen?",
+          "options": [
+            "25 Liter",
+            "100 Liter",
+            "50 Liter"
+          ],
+          "correct": "C",
+          "fact": "Ein Österreicher verbraucht im Schnitt etwa dreimal so viel."
+        }
+      ]
+    }
+  ]
+}

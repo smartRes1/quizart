@@ -1,0 +1,117 @@
+{
+  "title": "Allgemeinwissen",
+  "settings": {
+    "secondsPerQuestion": 25,
+    "pointsPerCorrect": 1
+  },
+  "rounds": [
+    {
+      "name": "Rund um die Welt",
+      "subtitle": "Flüsse, Wüsten und Grenzen",
+      "questions": [
+        {
+          "q": "Welcher ist der längste Fluss Europas?",
+          "options": ["Donau", "Wolga", "Rhein"],
+          "correct": "B",
+          "fact": "Die Wolga ist rund 3.500 km lang. Die Donau folgt mit rund 2.850 km auf Platz zwei."
+        },
+        {
+          "q": "Welches Land hat die meisten Einwohner?",
+          "options": ["Indien", "China", "Vereinigte Staaten"],
+          "correct": "A",
+          "fact": "Laut UNO hat Indien 2023 China überholt. Beide liegen bei über 1,4 Milliarden Menschen."
+        },
+        {
+          "q": "An wie viele Länder grenzt Österreich?",
+          "options": ["7", "8", "9"],
+          "correct": "B",
+          "fact": "Deutschland, Tschechien, Slowakei, Ungarn, Slowenien, Italien, Schweiz und Liechtenstein."
+        },
+        {
+          "q": "Welche ist die größte heiße Wüste der Welt?",
+          "options": ["Gobi", "Kalahari", "Sahara"],
+          "correct": "C",
+          "fact": "Rechnet man Kältewüsten mit, ist die Antarktis noch größer."
+        },
+        {
+          "q": "In welchem Land liegt Timbuktu?",
+          "options": ["Mali", "Niger", "Tschad"],
+          "correct": "A",
+          "fact": "Im Mittelalter war Timbuktu ein Zentrum von Handel und Gelehrsamkeit. Heute ist die Stadt UNESCO-Welterbe."
+        }
+      ]
+    },
+    {
+      "name": "Wissenschaft & Technik",
+      "subtitle": "Vom Atom bis zur Turbine",
+      "questions": [
+        {
+          "q": "Welches chemische Symbol hat Gold?",
+          "options": ["Ag", "Au", "Go"],
+          "correct": "B",
+          "fact": "Au kommt vom lateinischen „aurum“. Ag steht für Silber („argentum“)."
+        },
+        {
+          "q": "Wie lange braucht das Licht der Sonne bis zur Erde?",
+          "options": ["etwa 8 Sekunden", "etwa 8 Stunden", "etwa 8 Minuten"],
+          "correct": "C",
+          "fact": "Rund 150 Millionen Kilometer bei knapp 300.000 km pro Sekunde ergeben gut 8 Minuten."
+        },
+        {
+          "q": "Was hat der Österreicher Viktor Kaplan erfunden?",
+          "options": ["Einen Elektromotor", "Einen Dieselmotor", "Eine Turbine"],
+          "correct": "C",
+          "fact": "Die Kaplan-Turbine (1913) steckt bis heute in vielen Flusskraftwerken, auch an der Donau."
+        },
+        {
+          "q": "Welches ist das größte Organ des Menschen?",
+          "options": ["Haut", "Leber", "Lunge"],
+          "correct": "A",
+          "fact": "Die Haut eines Erwachsenen bedeckt rund 1,5 bis 2 Quadratmeter."
+        },
+        {
+          "q": "Bei welcher Temperatur kocht Wasser auf dem Gipfel des Großglockners (3.798 m)?",
+          "options": ["bei rund 100 °C", "bei rund 88 °C", "bei rund 75 °C"],
+          "correct": "B",
+          "fact": "Je höher, desto geringer der Luftdruck. Darum kocht Wasser dort früher, und Nudeln brauchen länger."
+        }
+      ]
+    },
+    {
+      "name": "Zeitreise",
+      "subtitle": "Kaiserinnen, Weltwunder und Raumfahrt",
+      "questions": [
+        {
+          "q": "In welchem Jahr fiel die Berliner Mauer?",
+          "options": ["1987", "1989", "1991"],
+          "correct": "B",
+          "fact": "Am Abend des 9. November 1989 wurden die Grenzübergänge geöffnet."
+        },
+        {
+          "q": "Welche Frau herrschte als einzige aus eigenem Recht über die Habsburgerländer?",
+          "options": ["Maria Theresia", "Elisabeth („Sisi“)", "Marie Antoinette"],
+          "correct": "A",
+          "fact": "Sie regierte 40 Jahre lang (1740–1780) und hatte 16 Kinder, darunter Marie Antoinette."
+        },
+        {
+          "q": "Welches der sieben antiken Weltwunder steht heute noch?",
+          "options": ["Der Koloss von Rhodos", "Der Leuchtturm von Pharos", "Die Cheops-Pyramide"],
+          "correct": "C",
+          "fact": "Sie ist das älteste der sieben Weltwunder und als einziges erhalten."
+        },
+        {
+          "q": "Wie lange dauerte der Hundertjährige Krieg?",
+          "options": ["genau 100 Jahre", "116 Jahre", "84 Jahre"],
+          "correct": "B",
+          "fact": "Von 1337 bis 1453 zwischen England und Frankreich, mit langen Pausen dazwischen."
+        },
+        {
+          "q": "Wer flog 1961 als erster Mensch ins All?",
+          "options": ["Juri Gagarin", "Neil Armstrong", "John Glenn"],
+          "correct": "A",
+          "fact": "Sein Flug dauerte 108 Minuten, genau eine Erdumrundung."
+        }
+      ]
+    }
+  ]
+}

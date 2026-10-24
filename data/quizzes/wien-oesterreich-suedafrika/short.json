@@ -1,0 +1,75 @@
+{
+  "title": "Wien · Österreich · Südafrika",
+  "settings": {
+    "secondsPerQuestion": 25,
+    "pointsPerCorrect": 1
+  },
+  "rounds": [
+    {
+      "name": "Österreich, Südafrika oder beides?",
+      "subtitle": "Wo trifft die Aussage zu?",
+      "questions": [
+        {
+          "q": "Hier gibt es ein Museum nur für Fälschungen.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "A",
+          "fact": "Das Fälschermuseum in Wien, ums Eck vom Hundertwasserhaus."
+        },
+        {
+          "q": "Hier gelang die erste Herztransplantation der Welt.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "B",
+          "fact": "Christiaan Barnard, 1967 in Kapstadt."
+        },
+        {
+          "q": "Hier fuhr man im 20. Jahrhundert links.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "C",
+          "fact": "Wien fuhr bis 1938 links."
+        },
+        {
+          "q": "Hier wurde die Schneekugel erfunden.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "A",
+          "fact": "Erwin Perzy, 1900 in Wien, eigentlich wollte er eine bessere OP-Lampe bauen."
+        },
+        {
+          "q": "Deutsch wird in der Verfassung ausdrücklich erwähnt.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "C",
+          "fact": "Die südafrikanische Verfassung nennt Deutsch als Sprache, die gefördert werden soll."
+        },
+        {
+          "q": "Hier gibt es eine Goldmine, die fast 4 km tief ist.",
+          "options": [
+            "Österreich",
+            "Südafrika",
+            "Beides"
+          ],
+          "correct": "B",
+          "fact": "Mponeng, die tiefste Mine der Welt."
+        }
+      ]
+    }
+  ]
+}

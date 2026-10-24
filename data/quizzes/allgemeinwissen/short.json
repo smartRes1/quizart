@@ -1,0 +1,51 @@
+{
+  "title": "Allgemeinwissen",
+  "settings": {
+    "secondsPerQuestion": 25,
+    "pointsPerCorrect": 1
+  },
+  "rounds": [
+    {
+      "name": "Bunt gemischt",
+      "subtitle": "Sechs Fragen quer durch alles",
+      "questions": [
+        {
+          "q": "Welcher Planet ist der Sonne am nächsten?",
+          "options": ["Venus", "Merkur", "Jupiter"],
+          "correct": "B",
+          "fact": "Ein Jahr dauert auf dem Merkur nur 88 Erdentage."
+        },
+        {
+          "q": "Wie viele Knochen hat ein erwachsener Mensch?",
+          "options": ["206", "156", "306"],
+          "correct": "A",
+          "fact": "Babys kommen mit rund 300 Knochen zur Welt, viele davon wachsen später zusammen."
+        },
+        {
+          "q": "Welches ist das größte Tier, das je auf der Erde gelebt hat?",
+          "options": ["Argentinosaurus", "Megalodon", "Blauwal"],
+          "correct": "C",
+          "fact": "Blauwale werden bis zu 30 Meter lang und weit über 100 Tonnen schwer – mehr als jeder bekannte Dinosaurier."
+        },
+        {
+          "q": "Welches Land hat die meisten Zeitzonen?",
+          "options": ["Russland", "Frankreich", "Vereinigte Staaten"],
+          "correct": "B",
+          "fact": "Dank Überseegebieten wie Französisch-Polynesien und La Réunion kommt Frankreich auf 12 Zeitzonen."
+        },
+        {
+          "q": "Wie heißt die Hauptstadt von Australien?",
+          "options": ["Sydney", "Melbourne", "Canberra"],
+          "correct": "C",
+          "fact": "Canberra wurde als Kompromiss zwischen den Rivalen Sydney und Melbourne eigens als Hauptstadt geplant."
+        },
+        {
+          "q": "Was misst die Einheit Hertz?",
+          "options": ["Frequenz", "Lautstärke", "Leistung"],
+          "correct": "A",
+          "fact": "Benannt nach dem Physiker Heinrich Hertz. 1 Hertz ist eine Schwingung pro Sekunde."
+        }
+      ]
+    }
+  ]
+}

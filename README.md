@@ -2,7 +2,7 @@
 
 Selbst gehostetes Party-Quiz: Die Spielleitung steuert am Beamer oder TV, die Teams spielen am Handy. Gescannt wird nur einmal zu Beginn, nach jeder Runde gibt es ein Zwischenergebnis, am Ende ein Siegerpodest.
 
-Keine Datenbank, keine Cloud, keine Tracker, keine externen Schriften. Ein Container, ein Ordner mit zwei Dateien.
+Keine Datenbank, keine Cloud, keine Tracker, keine externen Schriften. Ein Container, ein Ordner mit JSON-Dateien.
 
 ## Starten
 
@@ -25,7 +25,7 @@ Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach au
 
 ## Ablauf am Abend
 
-1. `/host` am Beamer öffnen, PIN eingeben, **F** für Vollbild.
+1. `/host` am Beamer öffnen, PIN eingeben, **F** für Vollbild. Im **Menü** Thema und Länge wählen.
 2. Runde 1 zeigt Titel und QR-Code. Teams scannen, geben ihren Namen ein und erscheinen als grüne Chips.
 3. **Leertaste** (oder „Quiz starten“) startet die erste Frage. Die Handys zeigen die Antwortknöpfe, der Beamer Frage und Countdown.
 4. Wenn alle Teams geantwortet haben oder die Zeit um ist, wird automatisch aufgelöst: richtige Antwort, Verteilung der Antworten, Funfact.
@@ -43,9 +43,32 @@ Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach au
 - Bei Punktegleichstand gewinnt das Team, das seine richtigen Antworten insgesamt schneller abgegeben hat.
 - Eine abgegebene Antwort ist endgültig.
 
+## Quiz-Pool
+
+Die Quizze liegen nach Thema und Länge sortiert in `data/quizzes/`:
+
+```
+data/quizzes/
+  allgemeinwissen/
+    short.json   1 Runde, 2–6 Min
+    mid.json     3–4 Runden, 7–15 Min
+  wien-oesterreich-suedafrika/
+    short.json
+    mid.json
+    long.json    mehr als 15 Min
+```
+
+Ein Thema ist ein Ordner (Kleinbuchstaben, Ziffern, `-`), darin `short.json`, `mid.json` und/oder `long.json`, nicht jede Länge muss es geben. Im Menü wählt die Spielleitung Thema und Länge. Vor der ersten Frage wird das sofort übernommen und die angemeldeten Teams bleiben dabei. Läuft das Spiel schon, gilt die Auswahl ab „Neues Spiel“. Als Themenname zeigt das Menü den `title` aus der Datei.
+
+Die Dauer schätzt der Server so: pro Frage die Fragezeit plus 20 Sekunden für Auflösung und Funfact, pro Runde 45 Sekunden für Intro und Zwischenergebnis.
+
+```bash
+npm run check   # prüft alle Quizze und zeigt, ob die geschätzte Dauer zur Länge passt
+```
+
 ## Fragen bearbeiten
 
-Alle Fragen stehen in `data/questions.json`. Aufbau einer Frage:
+Aufbau einer Frage:
 
 ```json
 {
@@ -61,8 +84,9 @@ Alle Fragen stehen in `data/questions.json`. Aufbau einer Frage:
 - Optional pro Frage: `"seconds": 40` (mehr Zeit) oder `"points": 2` (doppelte Punkte, z. B. Schätzfragen).
 - Global in `settings`: `secondsPerQuestion` und `pointsPerCorrect`.
 - Eine neue Runde ist ein weiterer Block in `rounds` mit `name`, `subtitle` und `questions`.
+- `title` ist der Name des Themas und sollte in allen Längen eines Themas gleich sein.
 
-Nach dem Ändern im Menü auf **„Fragen neu laden“** klicken (geht nur vor dem Start der ersten Frage) oder **„Neues Spiel“** wählen. Ist die Datei fehlerhaft, zeigt das Menü genau an, wo (z. B. „Runde 2, Frage 4: correct muss A/B/C sein“).
+Nach dem Ändern im Menü auf **„Fragen neu laden“** klicken (geht nur vor dem Start der ersten Frage) oder **„Neues Spiel“** wählen. Neue Dateien und Themen erscheinen beim nächsten Öffnen des Menüs. Ist eine Datei fehlerhaft, zeigt das Menü genau an, wo (z. B. „Runde 2, Frage 4: correct muss A/B/C sein“).
 
 Tipps gegen verräterische Fragen:
 - Die richtige Antwort nicht länger oder genauer formulieren als die falschen.

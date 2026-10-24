@@ -104,6 +104,8 @@
   .pin input { font: inherit; font-size: 32px; letter-spacing: .3em; text-align: center; width: 220px; padding: 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); color: var(--text); }
   .err { color: #ff8f8f; margin-top: 10px; white-space: pre-line; }
   .note { color: var(--muted); font-size: 14px; margin-top: 10px; }
+  .pick { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pick select { font: inherit; font-size: 15px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); flex: 1 1 200px; min-width: 0; }
   .qrbig .qrcard { width: min(80vh, 90vw); }
 
   @media (max-width: 800px), (max-aspect-ratio: 1/1) {
@@ -138,8 +140,10 @@
 <div class="overlay" id="menuOv"><div class="panel">
   <h3>Menü</h3>
   <p><button id="btnFull">Vollbild (Taste F)</button> <button id="btnClean">Steuerleiste ausblenden</button></p>
+  <div class="pick"><select id="topicSel" aria-label="Thema"></select><select id="lenSel" aria-label="Länge"></select></div>
+  <p class="note" id="quizNote"></p>
   <p><button id="btnReload">Fragen neu laden</button></p>
-  <p class="note" id="reloadNote">Liest data/questions.json neu ein. Nur vor dem Start der ersten Frage möglich.</p>
+  <p class="note">Liest die Datei des gewählten Quiz neu ein. Wechseln und neu laden geht nur vor dem Start der ersten Frage.</p>
   <hr style="border-color:var(--line)">
   <p><button id="btnResetKeep">Neues Spiel, Teams behalten</button> <button id="btnReset">Neues Spiel, alles löschen</button></p>
   <p class="note">Beim Neustart werden auch die Fragen neu eingelesen und ein neuer QR-Code erzeugt.</p>
@@ -381,7 +385,47 @@
     if (r.ok) { S = r.data; lastKey = ''; render(); renderTeams(); }
   });
 
-  $('btnMenu').addEventListener('click', () => { $('menuErr').textContent = ''; $('menuOv').classList.add('show'); });
+  // ---------- Quiz-Pool: Thema und Länge wählen
+  let pool = [];
+  const chosenId = () => `${$('topicSel').value}/${$('lenSel').value}`;
+  function fillLengths(selectedId) {
+    const list = pool.filter((q) => q.topic === $('topicSel').value);
+    $('lenSel').innerHTML = list.map((q) => `<option value="${q.duration}"${q.error ? ' disabled' : ''}>${esc(q.durationLabel)} · ${q.error ? 'fehlerhaft' : `${q.rounds} ${q.rounds === 1 ? 'Runde' : 'Runden'} · ${q.questions} Fragen · ca. ${q.minutes} Min`}</option>`).join('');
+    const pick = list.find((q) => q.id === selectedId) || list.find((q) => !q.error);
+    if (pick) $('lenSel').value = pick.duration;
+  }
+  function quizNote() {
+    const changed = chosenId() !== S.quizId;
+    $('quizNote').textContent = S.canReload ? 'Ein anderes Quiz wird sofort übernommen, angemeldete Teams bleiben.'
+      : changed ? 'Wird beim nächsten „Neues Spiel“ verwendet.' : 'Läuft gerade. Ein anderes Quiz gilt ab dem nächsten „Neuen Spiel“.';
+  }
+  async function loadPool() {
+    const r = await api('quizzes');
+    if (!r.ok) return;
+    pool = r.data;
+    const topics = [...new Set(pool.map((q) => q.topic))];
+    $('topicSel').innerHTML = topics.map((t) => {
+      const named = pool.find((q) => q.topic === t && q.title);
+      return `<option value="${esc(t)}">${esc(named ? named.title : t)}</option>`;
+    }).join('');
+    $('topicSel').value = S.quizId.split('/')[0];
+    fillLengths(S.quizId);
+    quizNote();
+    const broken = pool.filter((q) => q.error);
+    if (broken.length) { $('menuErr').style.color = ''; $('menuErr').textContent = broken.map((q) => `${q.id}:\n${q.error}`).join('\n\n'); }
+  }
+  async function selectQuiz() {
+    quizNote();
+    if (!S.canReload || chosenId() === S.quizId) return;
+    const r = await api('select', { id: chosenId() });
+    $('menuErr').style.color = r.ok ? '#3fd68f' : '';
+    $('menuErr').textContent = r.ok ? r.data.message : r.data.error;
+    if (r.ok) { S = r.data.state; lastKey = ''; render(); quizNote(); }
+  }
+  $('topicSel').addEventListener('change', () => { fillLengths(); selectQuiz(); });
+  $('lenSel').addEventListener('change', selectQuiz);
+
+  $('btnMenu').addEventListener('click', () => { $('menuErr').textContent = ''; $('menuOv').classList.add('show'); loadPool(); });
   document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.overlay').classList.remove('show')));
   $('btnFull').addEventListener('click', toggleFull);
   $('btnClean').addEventListener('click', () => { document.body.classList.toggle('clean'); $('menuOv').classList.remove('show'); });
@@ -389,11 +433,12 @@
     const r = await api('reload', {});
     $('menuErr').style.color = r.ok ? '#3fd68f' : '';
     $('menuErr').textContent = r.ok ? r.data.message : r.data.error;
+    if (r.ok) { S = r.data.state; render(); loadPool(); }
     lastKey = '';
   });
   async function reset(keepTeams) {
     if (!confirm(keepTeams ? 'Neues Spiel starten? Alle Punkte werden gelöscht, die Teams bleiben angemeldet.' : 'Wirklich alles löschen? Teams und Punkte gehen verloren.')) return;
-    const r = await api('reset', { keepTeams });
+    const r = await api('reset', { keepTeams, quiz: $('lenSel').value ? chosenId() : undefined });
     if (r.ok) { S = r.data; lastKey = ''; render(); $('menuOv').classList.remove('show'); }
     else { $('menuErr').style.color = ''; $('menuErr').textContent = r.data.error; }
   }
