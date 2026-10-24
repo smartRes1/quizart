@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiz-Party · Spielleitung</title>
+<style>
+  :root {
+    --bg: #15121c; --surface: #221d2b; --surface-2: #2d2738; --line: #3a3346;
+    --text: #f6f1ea; --muted: #a59cb3;
+    --a: #e5383b; --b: #12a06a; --c: #f2b705; --d: #2b6ce4;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text); overflow: hidden;
+    font: 18px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .stripe { height: 8px; background: linear-gradient(90deg, var(--a) 0 33.3%, #fff 33.3% 66.6%, var(--b) 66.6% 83.3%, var(--c) 83.3%); }
+  #stage { position: absolute; inset: 8px 0 64px 0; padding: clamp(16px, 3vw, 48px); display: flex; flex-direction: column; }
+  .kicker { color: var(--muted); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: clamp(13px, 1.3vw, 20px); }
+  .title { font-weight: 900; letter-spacing: -0.02em; line-height: 1.02; font-size: clamp(36px, 6vw, 104px); margin: .15em 0 .2em; }
+  .sub { color: var(--muted); font-size: clamp(16px, 1.8vw, 30px); }
+
+  /* Intro / QR */
+  .intro { flex: 1; display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(20px, 4vw, 72px); align-items: center; min-height: 0; }
+  .qrcard { background: #fff; color: #111; border-radius: 24px; padding: clamp(14px, 1.6vw, 26px); text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.45); justify-self: center; width: min(100%, 62vh); }
+  .qrcard img { display: block; width: 100%; aspect-ratio: 1; }
+  .qrcard .url { font-weight: 800; font-size: clamp(13px, 1.25vw, 22px); margin-top: 10px; word-break: break-all; }
+  .qrcard .code { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .25em; font-size: clamp(16px, 1.6vw, 28px); font-weight: 800; color: #555; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: clamp(16px, 2.4vw, 36px); }
+  .chip { padding: 8px 14px; border-radius: 99px; background: var(--surface-2); font-weight: 700; font-size: clamp(14px, 1.3vw, 22px); animation: pop .35s ease-out; }
+  .chip.on { background: var(--b); }
+  .chip.off { opacity: .45; }
+  .count { font-size: clamp(18px, 2vw, 34px); font-weight: 800; margin-top: 1em; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* Frage */
+  .qhead { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; }
+  .qtext { font-weight: 850; line-height: 1.12; font-size: clamp(28px, 3.9vw, 68px); margin: .35em 0 .5em; letter-spacing: -0.01em; }
+  .opts { display: grid; gap: clamp(10px, 1.4vw, 22px); grid-template-columns: 1fr; flex: 1; align-content: start; }
+  .opts.two { grid-template-columns: 1fr 1fr; }
+  .opt { position: relative; overflow: hidden; display: flex; align-items: center; gap: clamp(12px, 1.4vw, 24px); border-radius: 18px; padding: clamp(14px, 1.6vw, 26px) clamp(16px, 2vw, 32px); font-weight: 800; font-size: clamp(20px, 2.5vw, 44px); line-height: 1.15; color: #fff; transition: opacity .4s, transform .4s; }
+  .opt .l { flex: none; width: 1.7em; height: 1.7em; border-radius: 12px; background: rgba(0,0,0,.22); display: grid; place-items: center; font-weight: 900; }
+  .opt .txt { position: relative; flex: 1; }
+  .opt .n { position: relative; font-variant-numeric: tabular-nums; opacity: .95; }
+  .opt .fill { position: absolute; inset: 0 auto 0 0; background: rgba(255,255,255,.18); transition: width .8s ease-out; }
+  .opt.o0 { background: var(--a); } .opt.o1 { background: var(--b); } .opt.o2 { background: var(--c); color: #1a1405; } .opt.o3 { background: var(--d); }
+  .opt.dim { opacity: .25; transform: scale(.985); }
+  .opt.right { box-shadow: 0 0 0 6px #fff; }
+  .timer { display: flex; align-items: center; gap: 18px; margin-top: clamp(12px, 1.5vw, 24px); }
+  .bar { flex: 1; height: 14px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--c); }
+  .secs { font-weight: 900; font-variant-numeric: tabular-nums; font-size: clamp(26px, 3vw, 54px); min-width: 2.2ch; text-align: right; }
+  .answered { color: var(--muted); font-weight: 700; font-size: clamp(15px, 1.4vw, 24px); }
+  .fact { margin-top: clamp(12px, 1.6vw, 26px); border-left: 6px solid var(--c); padding: 6px 0 6px 20px; font-size: clamp(18px, 2vw, 34px); line-height: 1.3; color: #ece5da; }
+
+  /* Ranking */
+  .rk { list-style: none; padding: 0; margin: clamp(10px, 1.6vw, 24px) 0 0; display: grid; gap: 8px; overflow: hidden; }
+  .rk li { display: grid; grid-template-columns: 3ch 1fr auto auto; gap: 18px; align-items: center; padding: clamp(8px, .9vw, 14px) clamp(14px, 1.4vw, 24px); background: var(--surface); border-radius: 14px; font-size: clamp(18px, 2vw, 34px); font-weight: 750; animation: slide .5s both; }
+  .rk li:nth-child(1) { background: linear-gradient(90deg, #6b5410, var(--surface) 70%); }
+  .rk .r { font-weight: 900; text-align: right; font-variant-numeric: tabular-nums; }
+  .rk .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rk .plus { color: var(--muted); font-size: .7em; font-variant-numeric: tabular-nums; }
+  .rk .s { font-weight: 900; font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+  .rk li.hd { background: none; animation: none; font-size: clamp(12px, 1vw, 17px); font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; padding-top: 0; padding-bottom: 0; }
+  .rk li.hd .plus, .rk li.hd .s { font-size: 1em; font-weight: 700; }
+  .tie { color: var(--muted); font-size: clamp(13px, 1.1vw, 19px); margin-top: 12px; }
+  .mv { font-size: .62em; margin-left: .5em; }
+  .mv.up { color: #3fd68f; } .mv.down { color: #ff7a7a; }
+  @keyframes slide { from { transform: translateX(-30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .rk.cols { grid-template-columns: 1fr 1fr; column-gap: 18px; }
+
+  /* Podest */
+  .podium { display: flex; justify-content: center; align-items: flex-end; gap: clamp(10px, 2vw, 36px); margin-top: clamp(10px, 2vw, 30px); }
+  .pod { text-align: center; width: clamp(140px, 20vw, 340px); animation: rise .9s both; }
+  .pod .nm { font-weight: 900; font-size: clamp(18px, 2.2vw, 40px); margin-bottom: 10px; overflow-wrap: anywhere; }
+  .pod .pts { color: var(--muted); font-weight: 700; font-size: clamp(14px, 1.4vw, 24px); margin-bottom: 8px; }
+  .pod .blk { border-radius: 16px 16px 0 0; display: grid; place-items: center; font-weight: 900; font-size: clamp(40px, 6vw, 110px); color: rgba(0,0,0,.55); }
+  .pod.p1 .blk { height: clamp(140px, 30vh, 320px); background: var(--c); } .pod.p1 { animation-delay: 1.2s; }
+  .pod.p2 .blk { height: clamp(100px, 21vh, 230px); background: #d9d4cc; } .pod.p2 { animation-delay: .6s; }
+  .pod.p3 .blk { height: clamp(70px, 15vh, 170px); background: #c8814a; }
+  @keyframes rise { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .rest { margin-top: 18px; color: var(--muted); font-size: clamp(14px, 1.4vw, 24px); text-align: center; }
+
+  /* Steuerleiste */
+  #controls { position: fixed; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: center; gap: 10px; padding: 0 16px; background: #0f0d14; border-top: 1px solid var(--line); }
+  #controls .grow { flex: 1; color: var(--muted); font-size: 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; padding: 10px 16px; background: var(--surface-2); color: var(--text); font-weight: 700; font-size: 15px; }
+  button.go { background: var(--c); color: #1a1405; font-weight: 900; font-size: 17px; padding: 10px 22px; }
+  button:disabled { opacity: .4; cursor: default; }
+  body.clean #controls { opacity: 0; transition: opacity .3s; } body.clean #controls:hover { opacity: 1; }
+
+  /* Overlays */
+  .overlay { position: fixed; inset: 0; background: rgba(8,6,12,.82); display: none; align-items: center; justify-content: center; z-index: 10; padding: 20px; }
+  .overlay.show { display: flex; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; width: min(560px, 100%); max-height: 86vh; overflow: auto; }
+  .panel h3 { margin: 0 0 14px; font-size: 22px; }
+  .teamrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .teamrow span { flex: 1; } .teamrow .st { flex: none; color: var(--muted); font-size: 14px; }
+  .teamrow button { padding: 6px 12px; background: #4a2025; }
+  .pin { text-align: center; }
+  .pin input { font: inherit; font-size: 32px; letter-spacing: .3em; text-align: center; width: 220px; padding: 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); color: var(--text); }
+  .err { color: #ff8f8f; margin-top: 10px; white-space: pre-line; }
+  .note { color: var(--muted); font-size: 14px; margin-top: 10px; }
+  .qrbig .qrcard { width: min(80vh, 90vw); }
+
+  @media (max-width: 800px), (max-aspect-ratio: 1/1) {
+    .intro { grid-template-columns: 1fr; }
+    .qrcard { width: min(100%, 44vh); }
+    .opts.two, .rk.cols { grid-template-columns: 1fr; }
+    #controls .grow { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<div id="stage"></div>
+
+<div id="controls" hidden>
+  <button class="go" id="btnNext">Weiter</button>
+  <div class="grow" id="hint"></div>
+  <button id="btnQr" title="Taste Q">QR-Code</button>
+  <button id="btnTeams">Teams</button>
+  <button id="btnMenu">Menü</button>
+</div>
+
+<div class="overlay" id="pinOv">
+  <div class="panel pin">
+    <h3>Spielleitung</h3>
+    <form id="pinForm"><input id="pinIn" inputmode="numeric" autocomplete="off" placeholder="PIN"><div class="err" id="pinErr"></div>
+    <p><button class="go" style="margin-top:12px">Anmelden</button></p></form>
+  </div>
+</div>
+<div class="overlay qrbig" id="qrOv"><div id="qrBig"></div></div>
+<div class="overlay" id="teamsOv"><div class="panel"><h3>Teams</h3><div id="teamList"></div><p><button data-close>Schließen</button></p></div></div>
+<div class="overlay" id="menuOv"><div class="panel">
+  <h3>Menü</h3>
+  <p><button id="btnFull">Vollbild (Taste F)</button> <button id="btnClean">Steuerleiste ausblenden</button></p>
+  <p><button id="btnReload">Fragen neu laden</button></p>
+  <p class="note" id="reloadNote">Liest data/questions.json neu ein. Nur vor dem Start der ersten Frage möglich.</p>
+  <hr style="border-color:var(--line)">
+  <p><button id="btnResetKeep">Neues Spiel, Teams behalten</button> <button id="btnReset">Neues Spiel, alles löschen</button></p>
+  <p class="note">Beim Neustart werden auch die Fragen neu eingelesen und ein neuer QR-Code erzeugt.</p>
+  <div class="err" id="menuErr"></div>
+  <p><button data-close>Schließen</button></p>
+</div></div>
+
+<script>
+(() => {
+  'use strict';
+  const LETTERS = ['A', 'B', 'C', 'D'];
+  const stage = document.getElementById('stage');
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+  let pin = store.get('quizparty.pin') || '';
+  let S = null;
+  let lastKey = '';
+  let localDeadline = 0;
+  let busy = false;
+
+  async function api(path, body) {
+    const res = await fetch('/api/host/' + path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'X-Host-Pin': pin, 'Content-Type': 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  }
+
+  // ---------- Login
+  function askPin(msg) {
+    $('pinOv').classList.add('show');
+    $('pinErr').textContent = msg || '';
+    $('pinIn').focus();
+  }
+  $('pinForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    pin = $('pinIn').value.trim();
+    const r = await api('state');
+    if (r.ok) { store.set('quizparty.pin', pin); $('pinOv').classList.remove('show'); begin(); }
+    else askPin('Falscher PIN');
+  });
+
+  let started = false;
+  async function begin() {
+    if (started) return;
+    started = true;
+    $('controls').hidden = false;
+    const tick = async () => {
+      try {
+        const r = await api('state');
+        if (r.status === 403) { started = false; return askPin('PIN ungültig'); }
+        if (r.ok) { S = r.data; render(); }
+      } catch {}
+      setTimeout(tick, S && S.phase === 'question' ? 300 : 800);
+    };
+    tick();
+  }
+
+  // ---------- Darstellung
+  // Hinweis, wenn Teams punktgleich sind: dann entscheidet die Zeit
+  const tieNote = (rows) => rows.some((r, i) => i > 0 && r.score === rows[i - 1].score) ? ' Bei Punktegleichstand liegt vorne, wer seine richtigen Antworten schneller abgegeben hat.' : '';
+  const qrSrc = () => `/api/host/qr.svg?pin=${encodeURIComponent(pin)}&c=${S.code}`;
+  const qrCard = () => `<div class="qrcard"><img src="${qrSrc()}" alt="QR-Code"><div class="url">${esc(S.joinUrl)}</div></div>`;
+
+  function controls() {
+    const labels = {
+      intro: S.roundIndex === 0 ? 'Quiz starten ▶' : 'Runde starten ▶',
+      question: 'Auflösen',
+      reveal: (S.question && S.question.number < S.question.total) ? 'Nächste Frage ▶' : (S.roundIndex + 1 < S.roundCount ? 'Zwischenergebnis ▶' : 'Siegerehrung 🏆'),
+      standings: 'Nächste Runde ▶',
+      final: 'Ende',
+    };
+    $('btnNext').textContent = labels[S.phase];
+    $('btnNext').disabled = S.phase === 'final' || (S.phase === 'intro' && S.playersInRound === 0);
+    const hints = {
+      intro: S.playersInRound === 0 ? 'Warte auf das erste Team …' : `${S.playersInRound} Team(s) in dieser Runde · Leertaste = weiter`,
+      question: `${S.answeredCount || 0}/${S.playersInRound} geantwortet · löst automatisch auf, wenn alle geantwortet haben oder die Zeit um ist`,
+      reveal: 'Funfact vorlesen, dann weiter',
+      standings: `Danach geht es weiter mit „${S.nextRoundName || ''}“`,
+      final: 'Gratulation an alle Teams!',
+    };
+    $('hint').textContent = hints[S.phase] || '';
+    $('btnReload').disabled = !S.canReload;
+  }
+
+  function render() {
+    controls();
+    const q = S.question;
+    if (S.phase === 'question' && q) localDeadline = Date.now() + q.remainingMs;
+    const key = [S.phase, S.roundIndex, q && q.number, S.code, S.phase === 'intro' ? S.teams.map((t) => t.id + t.inRound).join() : '', S.ranking ? 'r' : ''].join('|');
+    // Zähler aktualisieren ohne Neuaufbau
+    if (key === lastKey) {
+      const a = $('answeredNow'); if (a) a.textContent = `${S.answeredCount || 0} von ${S.playersInRound} Teams haben geantwortet`;
+      return;
+    }
+    lastKey = key;
+    const roundLabel = `Runde ${S.roundIndex + 1} von ${S.roundCount}`;
+
+    if (S.phase === 'intro') {
+      const inR = S.teams.filter((t) => t.inRound);
+      const out = S.teams.filter((t) => !t.inRound);
+      stage.innerHTML = `
+        <div class="intro"${S.roundIndex === 0 ? '' : ' style="grid-template-columns:1fr"'}>
+          <div>
+            <div class="kicker">${S.roundIndex === 0 ? esc(S.title) + ' · ' : ''}${roundLabel}</div>
+            <div class="title">${esc(S.roundName)}</div>
+            <div class="sub">${esc(S.roundSubtitle)}</div>
+            <div class="count">${S.roundIndex === 0 ? 'Handykamera auf den QR-Code, Teamnamen eingeben – fertig.' : 'Alle Teams sind weiter dabei. Leertaste startet die Runde.'}</div>
+            <div class="chips">
+              ${inR.map((t) => `<span class="chip on">${esc(t.name)}</span>`).join('')}
+              ${out.map((t) => `<span class="chip off">${esc(t.name)}</span>`).join('')}
+            </div>
+            ${S.teams.length ? `<div class="answered" style="margin-top:14px">${inR.length} ${inR.length === 1 ? 'Team ist' : 'Teams sind'} dabei${out.length ? ` · ${out.length} noch nicht gescannt` : ''}</div>` : ''}
+          </div>
+          ${S.roundIndex === 0 ? qrCard() : ''}
+        </div>`;
+      return;
+    }
+
+    if ((S.phase === 'question' || S.phase === 'reveal') && q) {
+      const reveal = S.phase === 'reveal';
+      const total = reveal ? q.distribution.reduce((a, b) => a + b, 0) : 0;
+      const longOpts = q.options.some((o) => o.length > 26);
+      stage.innerHTML = `
+        <div class="qhead"><div class="kicker">${esc(S.roundName)} · Frage ${q.number} von ${q.total}</div><div class="kicker">${roundLabel}</div></div>
+        <div class="qtext">${esc(q.text)}</div>
+        <div class="opts ${!longOpts && q.options.length === 4 ? 'two' : ''}">
+          ${q.options.map((o, i) => {
+            const n = reveal ? q.distribution[i] : 0;
+            const cls = reveal ? (i === q.correct ? 'right' : 'dim') : '';
+            return `<div class="opt o${i} ${cls}">
+              ${reveal ? `<span class="fill" style="width:0" data-w="${total ? (100 * n / total) : 0}"></span>` : ''}
+              <span class="l">${LETTERS[i]}</span><span class="txt">${esc(o)}</span>
+              ${reveal ? `<span class="n">${n}</span>` : ''}</div>`;
+          }).join('')}
+        </div>
+        ${reveal
+          ? (q.fact ? `<div class="fact">${esc(q.fact)}</div>` : '')
+          : `<div class="timer"><div class="bar"><i id="bar"></i></div><div class="secs" id="secs"></div></div>
+             <div class="answered" id="answeredNow">${S.answeredCount || 0} von ${S.playersInRound} Teams haben geantwortet</div>`}`;
+      if (reveal) requestAnimationFrame(() => stage.querySelectorAll('.fill').forEach((f) => { f.style.width = f.dataset.w + '%'; }));
+      else runTimer(q.durationMs);
+      return;
+    }
+
+    if (S.phase === 'standings') {
+      const rows = S.ranking;
+      stage.innerHTML = `
+        <div class="kicker">Zwischenergebnis nach Runde ${S.roundIndex + 1} von ${S.roundCount}</div>
+        <div class="title" style="font-size:clamp(30px,4.2vw,72px)">${esc(S.roundName)}</div>
+        <ol class="rk ${rows.length > 8 ? 'cols' : ''}"><li class="hd"><span class="r">Pl.</span><span class="n">Team</span><span class="plus">diese Runde</span><span class="s">gesamt</span></li>${rows.length > 8 ? '<li class="hd"><span class="r">Pl.</span><span class="n">Team</span><span class="plus">diese Runde</span><span class="s">gesamt</span></li>' : ''}${rows.slice(0, 16).map((r, i) => `
+          <li style="animation-delay:${(rows.length - i) * 0.06}s"><span class="r">${r.rank}.</span>
+            <span class="n">${esc(r.name)}${r.move > 0 ? `<span class="mv up">▲${r.move}</span>` : r.move < 0 ? `<span class="mv down">▼${-r.move}</span>` : ''}</span>
+            <span class="plus">+${r.roundScore}</span><span class="s">${r.score}</span></li>`).join('')}
+        </ol>
+        ${rows.length > 16 ? `<div class="rest">… und ${rows.length - 16} weitere Teams</div>` : ''}
+        <div class="tie">Gesamt = Punkte aus allen bisherigen Runden (von höchstens ${S.maxPoints}).${tieNote(rows)}</div>`;
+      return;
+    }
+
+    if (S.phase === 'final') {
+      const rows = S.ranking;
+      const p = (n) => rows.find((r, i) => i === n - 1);
+      const pod = (n) => p(n) ? `<div class="pod p${n}"><div class="nm">${esc(p(n).name)}</div><div class="pts">${p(n).score} von ${S.maxPoints} Punkten</div><div class="blk">${p(n).rank}</div></div>` : '';
+      const rest = rows.slice(3);
+      stage.innerHTML = `
+        <div class="kicker" style="text-align:center">${esc(S.title)} · Endstand</div>
+        <div class="title" style="text-align:center;font-size:clamp(30px,4.6vw,80px)">Siegerehrung</div>
+        <div class="podium">${pod(2)}${pod(1)}${pod(3)}</div>
+        ${rest.length ? `<div class="rest">${rest.map((r) => `${r.rank}. ${esc(r.name)} (${r.score})`).join(' · ')}</div>` : ''}
+        <div class="tie" style="text-align:center">Alle ${S.roundCount} Runden zusammengezählt.${tieNote(rows)}</div>`;
+      confetti();
+      return;
+    }
+  }
+
+  let timerRaf = 0;
+  function runTimer(durationMs) {
+    cancelAnimationFrame(timerRaf);
+    const bar = $('bar'), secs = $('secs');
+    const step = () => {
+      if (!bar || !bar.isConnected) return;
+      const left = Math.max(0, localDeadline - Date.now());
+      bar.style.width = (100 * left / durationMs) + '%';
+      bar.style.background = left < 5000 ? 'var(--a)' : 'var(--c)';
+      secs.textContent = Math.ceil(left / 1000);
+      if (left > 0) timerRaf = requestAnimationFrame(step);
+    };
+    step();
+  }
+
+  function confetti() {
+    const colors = ['#e5383b', '#ffffff', '#12a06a', '#f2b705', '#2b6ce4'];
+    for (let i = 0; i < 120; i++) {
+      const c = document.createElement('i');
+      const size = 6 + Math.random() * 8;
+      c.style.cssText = `position:fixed;top:-20px;left:${Math.random() * 100}vw;width:${size}px;height:${size * 0.5}px;background:${colors[i % colors.length]};z-index:5;pointer-events:none;border-radius:2px;`;
+      document.body.appendChild(c);
+      const dur = 2600 + Math.random() * 2600;
+      c.animate([
+        { transform: `translate(0,0) rotate(0deg)` },
+        { transform: `translate(${(Math.random() - 0.5) * 300}px, 110vh) rotate(${720 * Math.random()}deg)` },
+      ], { duration: dur, delay: 1200 + Math.random() * 1500, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'both' }).onfinish = () => c.remove();
+    }
+  }
+
+  // ---------- Bedienung
+  async function next() {
+    if (busy || !S || $('btnNext').disabled) return;
+    busy = true;
+    const r = await api('next', {});
+    busy = false;
+    if (r.ok) { S = r.data; render(); }
+  }
+  $('btnNext').addEventListener('click', next);
+
+  function showQr() { if (!S) return; $('qrBig').innerHTML = qrCard(); $('qrOv').classList.add('show'); }
+  $('btnQr').addEventListener('click', showQr);
+  $('qrOv').addEventListener('click', () => $('qrOv').classList.remove('show'));
+
+  function renderTeams() {
+    $('teamList').innerHTML = S.teams.length ? S.teams.map((t) => `
+      <div class="teamrow"><span>${esc(t.name)}</span><span class="st">${t.inRound ? 'in dieser Runde' : 'nicht gescannt'}</span>
+      <button data-kick="${t.id}">Entfernen</button></div>`).join('') : '<p class="note">Noch keine Teams.</p>';
+  }
+  $('btnTeams').addEventListener('click', () => { renderTeams(); $('teamsOv').classList.add('show'); });
+  $('teamList').addEventListener('click', async (e) => {
+    const id = e.target.dataset && e.target.dataset.kick;
+    if (!id) return;
+    const t = S.teams.find((x) => x.id === id);
+    if (!confirm(`Team „${t ? t.name : ''}“ entfernen? Seine Punkte gehen verloren.`)) return;
+    const r = await api('kick', { id });
+    if (r.ok) { S = r.data; lastKey = ''; render(); renderTeams(); }
+  });
+
+  $('btnMenu').addEventListener('click', () => { $('menuErr').textContent = ''; $('menuOv').classList.add('show'); });
+  document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.overlay').classList.remove('show')));
+  $('btnFull').addEventListener('click', toggleFull);
+  $('btnClean').addEventListener('click', () => { document.body.classList.toggle('clean'); $('menuOv').classList.remove('show'); });
+  $('btnReload').addEventListener('click', async () => {
+    const r = await api('reload', {});
+    $('menuErr').style.color = r.ok ? '#3fd68f' : '';
+    $('menuErr').textContent = r.ok ? r.data.message : r.data.error;
+    lastKey = '';
+  });
+  async function reset(keepTeams) {
+    if (!confirm(keepTeams ? 'Neues Spiel starten? Alle Punkte werden gelöscht, die Teams bleiben angemeldet.' : 'Wirklich alles löschen? Teams und Punkte gehen verloren.')) return;
+    const r = await api('reset', { keepTeams });
+    if (r.ok) { S = r.data; lastKey = ''; render(); $('menuOv').classList.remove('show'); }
+    else { $('menuErr').style.color = ''; $('menuErr').textContent = r.data.error; }
+  }
+  $('btnResetKeep').addEventListener('click', () => reset(true));
+  $('btnReset').addEventListener('click', () => reset(false));
+
+  function toggleFull() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+    else document.exitFullscreen && document.exitFullscreen();
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    if (document.querySelector('.overlay.show:not(#qrOv)')) return;
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); next(); }
+    else if (e.key === 'q' || e.key === 'Q') { $('qrOv').classList.contains('show') ? $('qrOv').classList.remove('show') : showQr(); }
+    else if (e.key === 'f' || e.key === 'F') toggleFull();
+    else if (e.key === 'Escape') $('qrOv').classList.remove('show');
+  });
+
+  if (pin) {
+    api('state').then((r) => { if (r.ok) begin(); else askPin(); }).catch(() => askPin());
+  } else askPin();
+})();
+</script>
+</body>
+</html>

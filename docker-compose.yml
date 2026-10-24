@@ -1,0 +1,16 @@
+services:
+  quiz:
+    build: .
+    container_name: quiz-party
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # PIN für die Spielleitung (/host) – steht in .env (nicht im Repo), Vorlage: .env.example
+      HOST_PIN: ${HOST_PIN:?HOST_PIN in .env setzen}
+      # Öffentliche Adresse, die im QR-Code steht (ohne Schrägstrich am Ende).
+      # Leer lassen = wird aus der aufgerufenen Adresse abgeleitet.
+      PUBLIC_URL: ""
+    volumes:
+      # Hier liegen questions.json (Fragen) und state.json (Spielstand)
+      - ./data:/app/data
