@@ -15,27 +15,43 @@ const quizzes = require('./lib/quizzes');
 if (process.argv.includes('--check')) process.exit(quizzes.checkPool());
 
 const party = require('./lib/party');
+const runs = require('./lib/runs');
 const db = require('./lib/db');
 
 const PAGES = {
   '/': 'index.html',
   '/party': 'party.html',
   '/host': 'host.html',
+  '/solo': 'play.html',
 };
+// Gemeinsame Bausteine der neuen Seiten (Party-Seiten bleiben eigenständig)
+const ASSETS = {
+  '/common.css': 'text/css; charset=utf-8',
+  '/common.js': 'text/javascript; charset=utf-8',
+};
+
+function page(p) {
+  if (PAGES[p]) return PAGES[p];
+  if (/^\/r\/[A-Za-z0-9]{4,10}\/?$/.test(p)) return 'party.html'; // Link im Party-QR-Code
+  if (/^\/solo\/[\w-]{10,40}$/.test(p)) return 'play.html';
+  return null;
+}
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const p = url.pathname;
 
   try {
-    // ---- Seiten; /r/<code> ist der Link im Party-QR-Code
-    if (req.method === 'GET' && (PAGES[p] || /^\/r\/[A-Za-z0-9]{4,10}\/?$/.test(p))) {
-      return send(res, 200, fs.readFileSync(path.join(PUBLIC_DIR, PAGES[p] || 'party.html')), 'text/html; charset=utf-8');
+    if (req.method === 'GET' && page(p)) {
+      return send(res, 200, fs.readFileSync(path.join(PUBLIC_DIR, page(p))), 'text/html; charset=utf-8');
     }
+    if (req.method === 'GET' && ASSETS[p]) return send(res, 200, fs.readFileSync(path.join(PUBLIC_DIR, p.slice(1))), ASSETS[p]);
 
     if (req.method === 'GET' && p === '/healthz') return send(res, 200, { ok: true });
 
-    await party.handle(req, res, url);
+    for (const mod of [party, runs]) {
+      if (!res.writableEnded) await mod.handle(req, res, url);
+    }
     if (!res.writableEnded) send(res, 404, { error: 'not found' });
   } catch (e) {
     send(res, 400, { error: e.message || 'Fehler' });

@@ -16,7 +16,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- **Startseite:** `https://<deine-domain>/` zeigt alle Spielmodi. Fertig ist bisher Party, Solo, Battle und Match folgen.
+- **Startseite:** `https://<deine-domain>/` zeigt alle Spielmodi. Fertig sind Party und Solo (`/solo`, ohne Anmeldung), Battle und Match folgen.
 - **Spielleitung:** `https://<deine-domain>/host` (PIN aus `.env`)
 - **Teams:** scannen nur den QR-Code am Bildschirm, keine Adresse nötig
 

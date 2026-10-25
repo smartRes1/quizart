@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15121c">
+<title>Solo – Quiz-Party</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  .topic { padding: 16px; }
+  .topic h2 { margin: 0 0 10px; font-size: 20px; }
+  .lens { display: flex; flex-wrap: wrap; gap: 8px; }
+  .len { flex: 1 1 140px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); }
+  .len b { display: block; font-size: 17px; }
+  .len span { color: var(--muted); font-size: 14px; }
+  .len:hover, .len:focus-visible { border-color: var(--c); }
+  .resume { border: 2px solid var(--c); }
+  .opt.right { opacity: 1; }
+  .opt.wrong { opacity: .55; outline: 4px solid #fff; outline-offset: 2px; }
+  .stats { display: flex; justify-content: center; gap: 22px; flex-wrap: wrap; margin-top: 10px; color: var(--muted); }
+  .stats b { display: block; color: var(--text); font-size: 22px; font-variant-numeric: tabular-nums; }
+  ol.review { list-style: none; padding: 0; margin: 8px 0 0; }
+  ol.review li { padding: 10px 12px 10px 40px; border-radius: 10px; position: relative; }
+  ol.review li:nth-child(odd) { background: var(--surface); }
+  ol.review li::before { position: absolute; left: 12px; top: 10px; font-weight: 900; }
+  ol.review li.ok::before { content: "✓"; color: var(--ok); }
+  ol.review li.bad::before { content: "✗"; color: #ff8f8f; }
+  ol.review .a { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header>
+  <a class="home" href="/">← Quiz-Party</a>
+  <div class="score" id="hdrScore"></div>
+</header>
+<main id="app"><p class="muted">Lade …</p></main>
+<div class="offline" id="offline">Keine Verbindung – versuche es erneut …</div>
+
+<script src="/common.js"></script>
+<script>
+(() => {
+  'use strict';
+  const app = document.getElementById('app');
+  const hdrScore = document.getElementById('hdrScore');
+  const offline = document.getElementById('offline');
+  const RUN_KEY = 'quizart.solo'; // zuletzt begonnener Durchgang, für „Weiterspielen“
+
+  let run = null;
+  let busy = false;
+  let expireTimer = 0;
+
+  // Fehlt die Verbindung, wird die Aktion nach kurzer Pause wiederholt
+  async function call(path, body) {
+    for (;;) {
+      try {
+        const r = await api(path, body);
+        offline.style.display = 'none';
+        return r;
+      } catch {
+        offline.style.display = 'block';
+        await new Promise((ok) => setTimeout(ok, 1500));
+      }
+    }
+  }
+
+  function route() {
+    const m = location.pathname.match(/^\/solo\/([\w-]+)$/);
+    if (m) return openRun(m[1]);
+    renderPicker();
+  }
+  window.addEventListener('popstate', route);
+
+  // ---------- Quiz wählen
+  async function renderPicker() {
+    run = null;
+    hdrScore.textContent = '';
+    const [pool, last] = await Promise.all([call('/api/quizzes'), store.get(RUN_KEY) ? call('/api/run/' + store.get(RUN_KEY)) : null]);
+    const open = last && last.ok && last.data.phase !== 'final' ? last.data : null;
+    if (last && !open) store.del(RUN_KEY);
+    const topics = [];
+    for (const q of pool.data) {
+      let t = topics.find((x) => x.topic === q.topic);
+      if (!t) topics.push(t = { topic: q.topic, title: q.title, quizzes: [] });
+      t.quizzes.push(q);
+    }
+    app.innerHTML = `
+      <div class="kicker">Solo</div>
+      <h1>Wähle dein Quiz</h1>
+      <p class="muted">Jede Frage hat ein Zeitlimit. Es zählen die Punkte, bei Gleichstand die Zeit deiner richtigen Antworten.</p>
+      ${open ? `<div class="card resume"><b>Angefangen: ${esc(open.title)}</b><br>
+        <span class="muted">Frage ${open.number} von ${open.total} · ${plural(open.score, 'Punkt', 'Punkte')}</span>
+        <button class="primary" id="resume">Weiterspielen</button></div>` : ''}
+      ${topics.length ? topics.map((t) => `
+        <div class="card topic"><h2>${esc(t.title)}</h2><div class="lens">${t.quizzes.map((q) => `
+          <button class="len" data-id="${esc(q.id)}"><b>${esc(q.durationLabel)}</b>
+          <span>${plural(q.questions, 'Frage', 'Fragen')} · ca. ${q.minutes} Min</span></button>`).join('')}
+        </div></div>`).join('') : '<p class="card">Noch keine Quizze im Pool.</p>'}
+      <div class="error" id="err"></div>`;
+    if (open) document.getElementById('resume').addEventListener('click', () => go(open.id, open));
+    app.querySelectorAll('.len').forEach((b) => b.addEventListener('click', () => start(b.dataset.id)));
+  }
+
+  async function start(quizId) {
+    if (busy) return;
+    busy = true;
+    const r = await call('/api/run/start', { quizId });
+    busy = false;
+    if (!r.ok) { const e = document.getElementById('err'); if (e) e.textContent = r.data.error || 'Das hat nicht geklappt.'; return; }
+    go(r.data.id, r.data);
+  }
+
+  function go(id, data) {
+    history.pushState(null, '', '/solo/' + id);
+    if (data) show(data); else openRun(id);
+  }
+
+  async function openRun(id) {
+    const r = await call('/api/run/' + id);
+    if (!r.ok) {
+      app.innerHTML = `<h1>Nicht gefunden</h1><p class="muted">${esc(r.data.error || 'Diesen Durchgang gibt es nicht.')}</p><a class="primary" href="/solo">Quiz wählen</a>`;
+      return;
+    }
+    show(r.data);
+  }
+
+  // ---------- Durchgang
+  function show(data) {
+    run = data;
+    clearTimeout(expireTimer);
+    if (run.phase === 'final') store.del(RUN_KEY); else store.set(RUN_KEY, run.id);
+    hdrScore.innerHTML = run.phase === 'final' ? '' : `<b>${run.score}</b> ${run.score === 1 ? 'Punkt' : 'Punkte'}`;
+    ({ intro, question, reveal, final })[run.phase]();
+    window.scrollTo(0, 0);
+  }
+
+  async function act(path, body) {
+    if (busy) return;
+    busy = true;
+    const r = await call(`/api/run/${run.id}/${path}`, body);
+    busy = false;
+    if (r.ok) show(r.data);
+    else if (r.data.state) show(r.data.state); // z. B. Zeit schon abgelaufen
+    else alert(r.data.error || 'Das hat nicht geklappt.');
+  }
+  const next = () => act('next', { step: run.step });
+
+  function intro() {
+    const r = run;
+    app.innerHTML = `
+      <div class="kicker">${r.roundIndex === 0 ? esc(r.title) : `Runde ${r.roundIndex + 1} von ${r.roundCount}`}</div>
+      <h1>${esc(r.roundName)}</h1>
+      ${r.roundSubtitle ? `<p class="muted">${esc(r.roundSubtitle)}</p>` : ''}
+      <div class="card">${plural(r.roundQuestions, 'Frage', 'Fragen')}${r.roundCount > 1 ? ` in dieser Runde, ${r.roundCount} Runden insgesamt` : ''}.
+        <br><span class="muted">Die Zeit läuft, sobald die Frage erscheint.</span></div>
+      <button class="primary" id="go">${r.number === 1 ? "Los geht's" : 'Weiter'}</button>`;
+    document.getElementById('go').addEventListener('click', next);
+  }
+
+  function question() {
+    const q = run.question;
+    app.innerHTML = `
+      <div class="kicker">${esc(run.roundName)} · Frage ${run.number}/${run.total}</div>
+      <div class="qtext">${esc(q.text)}</div>
+      <div class="timer"><i id="bar"></i></div>
+      <div class="opts">${q.options.map((o, i) => `
+        <button class="opt o${i}" data-i="${i}"><span class="l">${LETTERS[i]}</span><span>${esc(o)}</span></button>`).join('')}
+      </div>
+      <p class="center muted" style="margin-top:18px">${plural(q.points, 'Punkt', 'Punkte')} für die richtige Antwort.</p>`;
+    app.querySelectorAll('.opt').forEach((b) => b.addEventListener('click', () => pick(Number(b.dataset.i))));
+    runTimer(document.getElementById('bar'), Date.now() + q.remainingMs, q.durationMs);
+    // Zeit um: der Server wertet die Frage als nicht beantwortet
+    expireTimer = setTimeout(() => openRun(run.id), q.remainingMs + 800);
+  }
+
+  function pick(i) {
+    if (busy || run.phase !== 'question') return;
+    app.querySelectorAll('.opt').forEach((b, j) => { b.disabled = true; b.classList.add(j === i ? 'picked' : 'dim'); });
+    act('answer', { index: run.number - 1, choice: i });
+  }
+
+  function reveal() {
+    const q = run.question;
+    const has = run.myAnswer !== null;
+    const ok = has && run.myAnswer === q.correct;
+    app.innerHTML = `
+      <div class="kicker">${esc(run.roundName)} · Frage ${run.number}/${run.total}</div>
+      <div class="verdict ${has ? (ok ? 'ok' : 'bad') : 'none'}">
+        <div class="big">${has ? (ok ? 'Richtig!' : 'Leider falsch') : 'Zeit abgelaufen'}</div>
+        ${ok ? `<div>+${plural(q.points, 'Punkt', 'Punkte')} · ${seconds(run.ms)}</div>` : ''}
+      </div>
+      <div class="qtext" style="font-size:19px;margin-bottom:12px">${esc(q.text)}</div>
+      <div class="opts">${q.options.map((o, i) => `
+        <div class="opt o${i} ${i === q.correct ? 'right' : i === run.myAnswer ? 'wrong' : 'dim'}"><span class="l">${i === q.correct ? '✓' : LETTERS[i]}</span><span>${esc(o)}</span></div>`).join('')}
+      </div>
+      ${q.fact ? `<p class="fact" style="margin-top:16px">${esc(q.fact)}</p>` : ''}
+      <button class="primary" id="go">${run.last ? 'Zum Ergebnis' : 'Nächste Frage'}</button>`;
+    document.getElementById('go').addEventListener('click', next);
+  }
+
+  function final() {
+    const r = run;
+    const share = r.maxPoints ? r.score / r.maxPoints : 0;
+    const praise = share === 1 ? 'Perfekt – alles richtig!' : share >= .75 ? 'Stark!' : share >= .5 ? 'Gut gemacht.' : 'Nächstes Mal geht mehr.';
+    app.innerHTML = `
+      <div class="kicker">Ergebnis · ${esc(r.title)}</div>
+      <div class="card center">
+        <div class="rank-big">${r.score}</div>
+        <div class="muted">von ${plural(r.maxPoints, 'Punkt', 'Punkten')}</div>
+        <p style="margin:10px 0 0;font-weight:800;font-size:20px">${praise}</p>
+        <div class="stats">
+          <div><b>${r.correct}/${r.total}</b>richtig</div>
+          <div><b>${seconds(r.ms)}</b>Zeit für richtige</div>
+        </div>
+      </div>
+      <button class="primary" id="again">Nochmal spielen</button>
+      <a class="secondary" href="/solo" id="other">Anderes Quiz</a>
+      <h2 style="margin-top:28px">Deine Antworten</h2>
+      <ol class="review">${r.review.map((x) => `
+        <li class="${x.ok ? 'ok' : 'bad'}">${esc(x.text)}
+          <div class="a">${x.ok ? `${esc(x.correct)} · ${seconds(x.ms)}` : `${x.mine === null ? 'Keine Antwort' : `Deine: ${esc(x.mine)}`} · Richtig: ${esc(x.correct)}`}</div></li>`).join('')}
+      </ol>`;
+    document.getElementById('again').addEventListener('click', () => start(r.quizId));
+    document.getElementById('other').addEventListener('click', (e) => { e.preventDefault(); history.pushState(null, '', '/solo'); renderPicker(); });
+  }
+
+  // Tastatur am Computer: A–D oder 1–4 antworten, Enter geht weiter
+  document.addEventListener('keydown', (e) => {
+    if (!run || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (run.phase === 'question') {
+      const i = 'abcd'.indexOf(e.key.toLowerCase()) >= 0 ? 'abcd'.indexOf(e.key.toLowerCase()) : '1234'.indexOf(e.key);
+      if (i >= 0 && i < run.question.options.length) pick(i);
+    } else if (e.key === 'Enter' && (run.phase === 'intro' || run.phase === 'reveal')) {
+      e.preventDefault();
+      next();
+    }
+  });
+
+  route();
+})();
+</script>
+</body>
+</html>
