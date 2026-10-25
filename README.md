@@ -16,6 +16,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+- **Startseite:** `https://<deine-domain>/` zeigt alle Spielmodi. Fertig ist bisher Party, Solo, Battle und Match folgen.
 - **Spielleitung:** `https://<deine-domain>/host` (PIN aus `.env`)
 - **Teams:** scannen nur den QR-Code am Bildschirm, keine Adresse nötig
 
@@ -102,6 +103,7 @@ Liegt in `data/state.json` und überlebt einen Neustart des Containers. Zum komp
 ```bash
 npm install
 HOST_PIN=<eigene-PIN> node server.js
+npm test   # automatische Tests
 ```
 
-Node.js 20 oder neuer.
+Node.js 22.13 oder neuer.

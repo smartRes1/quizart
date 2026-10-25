@@ -1,0 +1,6 @@
+{
+  "title": "Zweites Quiz",
+  "rounds": [
+    { "name": "Nur eine Runde", "questions": [ { "q": "Ja?", "options": ["Ja", "Nein"], "correct": "A" } ] }
+  ]
+}

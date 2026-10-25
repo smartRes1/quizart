@@ -10,308 +10,77 @@
     --bg: #15121c; --surface: #221d2b; --surface-2: #2d2738; --line: #3a3346;
     --text: #f6f1ea; --muted: #a59cb3;
     --a: #e5383b; --b: #12a06a; --c: #f2b705; --d: #2b6ce4;
-    --ok: #12a06a; --bad: #e5383b;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; }
   body {
-    background: var(--bg); color: var(--text);
+    background: var(--bg); color: var(--text); min-height: 100vh;
     font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
   }
   .stripe { height: 6px; background: linear-gradient(90deg, var(--a) 0 33.3%, #fff 33.3% 66.6%, var(--b) 66.6% 83.3%, var(--c) 83.3%); }
-  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-  header .team { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  header .score { flex: none; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; }
-  header .score b { color: var(--text); font-size: 18px; }
-  main { padding: 20px 16px 40px; max-width: 560px; margin: 0 auto; }
-  h1 { font-size: 30px; line-height: 1.1; margin: 8px 0 12px; font-weight: 850; letter-spacing: -0.01em; }
-  h2 { font-size: 22px; line-height: 1.2; margin: 0 0 16px; font-weight: 800; }
+  main { padding: 28px 16px 48px; max-width: 760px; margin: 0 auto; }
+  h1 { font-size: clamp(34px, 7vw, 54px); line-height: 1.02; margin: 4px 0 8px; font-weight: 900; letter-spacing: -0.02em; }
   .kicker { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-  p { margin: 0 0 12px; }
-  .muted { color: var(--muted); }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin: 16px 0; }
-  input[type=text] {
-    width: 100%; font: inherit; font-size: 20px; padding: 14px 16px; border-radius: 12px;
-    border: 2px solid var(--line); background: var(--surface-2); color: var(--text); outline: none;
-  }
-  input[type=text]:focus { border-color: var(--c); }
-  button { font: inherit; cursor: pointer; }
-  .primary {
-    width: 100%; margin-top: 14px; padding: 16px; border: 0; border-radius: 12px;
-    background: var(--c); color: #1a1405; font-weight: 800; font-size: 19px;
-  }
-  .primary:disabled { opacity: .5; }
-  .error { color: #ff8f8f; margin-top: 10px; min-height: 1.4em; }
-  .opts { display: grid; gap: 12px; margin-top: 8px; }
-  .opt {
-    display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
-    min-height: 74px; padding: 14px 16px; border: 0; border-radius: 14px; color: #fff;
-    font-weight: 700; font-size: 18px; line-height: 1.25; transition: transform .08s, opacity .2s;
-  }
-  .opt:active { transform: scale(.98); }
-  .opt .l { flex: none; width: 40px; height: 40px; border-radius: 10px; background: rgba(0,0,0,.22); display: grid; place-items: center; font-weight: 900; font-size: 20px; }
-  .opt.o0 { background: var(--a); } .opt.o1 { background: var(--b); } .opt.o2 { background: var(--c); color: #1a1405; } .opt.o3 { background: var(--d); }
-  .opt.dim { opacity: .28; }
-  .opt.picked { outline: 4px solid #fff; outline-offset: 2px; }
-  .opt:disabled { cursor: default; }
-  .timer { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 12px 0 18px; }
-  .timer > i { display: block; height: 100%; background: var(--c); border-radius: 99px; transition: width .25s linear; }
-  .qtext { font-size: 22px; font-weight: 800; line-height: 1.25; margin: 6px 0 4px; }
-  .verdict { border-radius: 18px; padding: 22px 18px; text-align: center; margin: 4px 0 16px; }
-  .verdict.ok { background: var(--ok); } .verdict.bad { background: var(--bad); } .verdict.none { background: var(--surface-2); }
-  .verdict .big { font-size: 34px; font-weight: 900; line-height: 1.05; }
-  .fact { border-left: 4px solid var(--c); padding: 4px 0 4px 14px; color: #e9e2d8; }
-  .rank-big { font-size: 72px; font-weight: 900; line-height: 1; margin: 6px 0; font-variant-numeric: tabular-nums; }
-  ol.rank { list-style: none; padding: 0; margin: 8px 0 0; }
-  ol.rank li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; }
-  ol.rank li:nth-child(odd) { background: var(--surface); }
-  ol.rank li.me { background: var(--c); color: #1a1405; font-weight: 800; }
-  ol.rank .r { width: 28px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
-  ol.rank .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  ol.rank .s { font-weight: 800; font-variant-numeric: tabular-nums; }
-  .center { text-align: center; }
-  .pulse { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: var(--b); margin-right: 8px; animation: pulse 1.4s infinite; vertical-align: middle; }
-  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
-  .scanicon { width: 96px; height: 96px; margin: 24px auto 8px; display: block; opacity: .9; }
-  .offline { position: fixed; left: 0; right: 0; bottom: 0; background: #5a1f22; color: #fff; text-align: center; padding: 8px; font-size: 14px; display: none; }
+  .lead { color: var(--muted); margin: 0 0 24px; font-size: 18px; }
+  .back { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 2px solid var(--b); border-radius: 16px; padding: 14px 16px; margin: 0 0 22px; }
+  .back span { flex: 1 1 200px; }
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+  .mode { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px 18px 18px; overflow: hidden; }
+  .mode::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--accent); }
+  .mode h2 { margin: 0 0 6px; font-size: 24px; font-weight: 850; }
+  .mode p { margin: 0 0 14px; color: var(--muted); }
+  .mode .who { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 6px; }
+  .solo { --accent: var(--c); } .battle { --accent: var(--a); } .match { --accent: var(--d); } .party { --accent: var(--b); }
+  .btn { display: inline-block; text-decoration: none; font-weight: 800; padding: 11px 18px; border-radius: 12px; background: var(--accent, var(--c)); color: #120f17; }
+  .soon { display: inline-block; font-size: 14px; font-weight: 700; color: var(--muted); border: 1px dashed var(--line); border-radius: 99px; padding: 6px 12px; }
+  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
 </style>
 </head>
 <body>
 <div class="stripe"></div>
-<header id="hdr" hidden>
-  <div class="team" id="hdrTeam"></div>
-  <div class="score" id="hdrScore"></div>
-</header>
-<main id="app"><p class="muted">Lade …</p></main>
-<div class="offline" id="offline">Keine Verbindung – versuche es erneut …</div>
+<main>
+  <div class="kicker">Quiz-Party</div>
+  <h1>Wie willst du spielen?</h1>
+  <p class="lead">Allein, zu zweit, gegen viele oder mit Moderator am großen Bildschirm.</p>
 
+  <div class="back" id="back" hidden>
+    <span>Ihr spielt gerade bei einer Party mit?</span>
+    <a class="btn" href="/party" style="--accent: var(--b)">Zurück zur Party</a>
+  </div>
+
+  <div class="modes">
+    <section class="mode solo">
+      <div class="who">1 Spieler</div>
+      <h2>Solo</h2>
+      <p>Du gegen die Bestenliste. Es zählen Punkte und bei Gleichstand die Zeit.</p>
+      <span class="soon">Bald verfügbar</span>
+    </section>
+    <section class="mode battle">
+      <div class="who">1 gegen 1</div>
+      <h2>Battle</h2>
+      <p>Fordere Freunde heraus oder spiel gegen jemanden auf der Plattform. Jeder spielt, wann er Zeit hat.</p>
+      <span class="soon">Bald verfügbar</span>
+    </section>
+    <section class="mode match">
+      <div class="who">3 bis 10 Spieler, live</div>
+      <h2>Match</h2>
+      <p>Alle spielen gleichzeitig dieselben Fragen. Das Quiz läuft von selbst, ohne Moderator.</p>
+      <span class="soon">Bald verfügbar</span>
+    </section>
+    <section class="mode party">
+      <div class="who">Teams mit Moderator</div>
+      <h2>Party</h2>
+      <p>Die Spielleitung zeigt das Quiz am Beamer oder TV, die Teams spielen am Handy.</p>
+      <a class="btn" href="/host">Party moderieren</a>
+      <p class="note">Mitspielen? Einfach den QR-Code am großen Bildschirm scannen.</p>
+    </section>
+  </div>
+</main>
 <script>
-(() => {
-  'use strict';
-  const app = document.getElementById('app');
-  const hdr = document.getElementById('hdr');
-  const LETTERS = ['A', 'B', 'C', 'D'];
-  const store = {
-    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
-    del(k) { try { localStorage.removeItem(k); } catch {} },
-  };
-  let token = store.get('quizparty.token');
-  let memToken = token; // falls localStorage gesperrt ist
-  const m = location.pathname.match(/^\/r\/([A-Za-z0-9]+)/);
-  let code = m ? m[1].toUpperCase() : null;
-
-  let state = null;
-  let lastRenderKey = '';
-  let pending = false;
-  let codeError = null;
-  let localDeadline = 0;
-  const localAnswers = {};
-
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-  async function api(path, body) {
-    const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {});
-    const data = await res.json().catch(() => ({}));
-    return { ok: res.ok, status: res.status, data };
-  }
-
-  // ---------- Beitritt
-  async function start() {
-    if (code && memToken) {
-      const r = await api('/api/enter', { token: memToken, code });
-      if (r.status === 404) { store.del('quizparty.token'); memToken = null; }
-      else if (!r.ok) codeError = r.data.error;
-      if (memToken) { history.replaceState(null, '', '/'); code = null; }
-    }
-    if (code && !memToken) return renderJoin();
-    if (!memToken) return renderScan();
-    loop();
-  }
-
-  function renderScan(msg) {
-    hdr.hidden = true;
-    app.innerHTML = `
-      <svg class="scanicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4" rx=".5"/><rect x="13" y="13" width="4" height="4" rx=".5"/><path d="M13 7h4v4M7 13v4h4"/></svg>
-      <h1 class="center">Scannt den QR-Code</h1>
-      <p class="center muted">${esc(msg || 'Scannt den QR-Code am großen Bildschirm mit der Handykamera, um mitzuspielen.')}</p>`;
-  }
-
-  function renderJoin(err) {
-    hdr.hidden = true;
-    app.innerHTML = `
-      <div class="kicker">Willkommen beim Quiz</div>
-      <h1>Wie heißt euer Team?</h1>
-      <form id="joinForm" autocomplete="off">
-        <input type="text" id="name" maxlength="24" placeholder="z. B. Die Sachertorten" required>
-        <button class="primary" id="joinBtn">Los geht's</button>
-        <div class="error" id="err">${err ? esc(err) : ''}</div>
-      </form>
-      <p class="muted">Ein Handy pro Team. Der Name bleibt auf diesem Handy gespeichert. Ihr spielt alle Runden durch, ohne erneut zu scannen.</p>`;
-    const form = document.getElementById('joinForm');
-    const input = document.getElementById('name');
-    input.focus();
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('joinBtn');
-      btn.disabled = true;
-      const r = await api('/api/join', { name: input.value, code });
-      if (r.ok) {
-        memToken = r.data.token;
-        store.set('quizparty.token', memToken);
-        history.replaceState(null, '', '/');
-        code = null;
-        loop();
-      } else {
-        btn.disabled = false;
-        document.getElementById('err').textContent = r.data.error || 'Das hat nicht geklappt.';
-        if (r.status === 409 && /QR-Code/.test(r.data.error || '')) { renderScan(r.data.error); }
-      }
-    });
-  }
-
-  // ---------- Spiel
-  let loopStarted = false;
-  function loop() {
-    if (loopStarted) return;
-    loopStarted = true;
-    const tick = async () => {
-      try {
-        const r = await api('/api/state?token=' + encodeURIComponent(memToken || ''));
-        document.getElementById('offline').style.display = 'none';
-        if (r.ok) {
-          if (!r.data.team) { // Team wurde entfernt
-            store.del('quizparty.token'); memToken = null; loopStarted = false;
-            return renderScan('Euer Team ist nicht mehr im Spiel. Scannt den aktuellen QR-Code, um neu beizutreten.');
-          }
-          state = r.data;
-          if (state.team.inRound) codeError = null;
-          const lk = state.question ? state.roundIndex + ':' + state.question.number : '';
-          if (lk && state.phase === 'question' && localAnswers[lk] !== undefined && (state.myAnswer === null || state.myAnswer === undefined)) state.myAnswer = localAnswers[lk];
-          render();
-        }
-      } catch { document.getElementById('offline').style.display = 'block'; }
-      setTimeout(tick, state && (state.phase === 'question' || state.phase === 'reveal') ? 300 : 800);
-    };
-    tick();
-  }
-
-  function header() {
-    hdr.hidden = false;
-    document.getElementById('hdrTeam').textContent = state.team.name;
-    const me = state.me || { score: 0 };
-    document.getElementById('hdrScore').innerHTML = `<b>${me.score}</b> ${me.score === 1 ? 'Punkt' : 'Punkte'}`;
-  }
-
-  function render() {
-    header();
-    const s = state;
-    const q = s.question;
-    const key = [s.phase, s.roundIndex, q ? q.number : '', s.myAnswer, s.team.inRound, s.me && s.me.score, s.me && s.me.rank, codeError].join('|');
-    if (s.phase === 'question' && q) localDeadline = Date.now() + q.remainingMs;
-    if (key === lastRenderKey) return;
-    lastRenderKey = key;
-    const roundLabel = `Runde ${s.roundIndex + 1} von ${s.roundCount}`;
-
-    if (s.phase === 'intro') {
-      app.innerHTML = s.team.inRound
-        ? `<div class="kicker">${roundLabel}</div><h1>${esc(s.roundName)}</h1>
-           <p class="muted">${esc(s.roundSubtitle)}</p>
-           <div class="card"><span class="pulse"></span><b>Ihr seid dabei!</b><br><span class="muted">${s.roundQuestions} Fragen. Gleich geht's los – Augen auf den großen Bildschirm.</span></div>`
-        : notScanned(roundLabel);
-      return;
-    }
-
-    if (s.phase === 'question' && q) {
-      if (!s.team.inRound) { app.innerHTML = notScanned(roundLabel); return; }
-      const answered = s.myAnswer !== null && s.myAnswer !== undefined;
-      app.innerHTML = `
-        <div class="kicker">${esc(s.roundName)} · Frage ${q.number}/${q.total}</div>
-        <div class="qtext">${esc(q.text)}</div>
-        <div class="timer"><i id="bar" style="width:100%"></i></div>
-        <div class="opts">${q.options.map((o, i) => `
-          <button class="opt o${i} ${answered ? (i === s.myAnswer ? 'picked' : 'dim') : ''}" data-i="${i}" ${answered ? 'disabled' : ''}>
-            <span class="l">${LETTERS[i]}</span><span>${esc(o)}</span></button>`).join('')}
-        </div>
-        <p class="center muted" style="margin-top:18px">${answered ? '✓ Antwort ist eingeloggt. Warten auf die anderen …' : 'Tippt auf eure Antwort – sie zählt sofort.'}</p>`;
-      if (!answered) app.querySelectorAll('.opt').forEach((b) => b.addEventListener('click', () => answer(Number(b.dataset.i))));
-      animateBar(q.durationMs);
-      return;
-    }
-
-    if (s.phase === 'reveal' && q) {
-      if (!s.team.inRound) { app.innerHTML = notScanned(roundLabel); return; }
-      const has = s.myAnswer !== null && s.myAnswer !== undefined;
-      const ok = has && s.myAnswer === q.correct;
-      app.innerHTML = `
-        <div class="kicker">${esc(s.roundName)} · Frage ${q.number}/${q.total}</div>
-        <div class="verdict ${has ? (ok ? 'ok' : 'bad') : 'none'}">
-          <div class="big">${has ? (ok ? 'Richtig!' : 'Leider falsch') : 'Keine Antwort'}</div>
-          ${ok ? `<div>+${q.points} ${q.points === 1 ? 'Punkt' : 'Punkte'}</div>` : ''}
-        </div>
-        <div class="muted">Richtige Antwort</div>
-        <h2>${LETTERS[q.correct]}) ${esc(q.options[q.correct])}</h2>
-        ${q.fact ? `<p class="fact">${esc(q.fact)}</p>` : ''}`;
-      return;
-    }
-
-    if (s.phase === 'standings' || s.phase === 'final') {
-      const me = s.me;
-      const final = s.phase === 'final';
-      const top = s.ranking.slice(0, 10);
-      const meRow = s.ranking.find((r) => r.isMe);
-      if (meRow && !top.includes(meRow)) top.push(meRow);
-      const praise = !me ? '' : me.rank === 1 ? (final ? '🏆 Ihr habt gewonnen!' : 'Ihr führt!') : me.rank <= 3 ? (final ? 'Aufs Podest geschafft!' : 'Ganz vorne dabei!') : '';
-      app.innerHTML = `
-        <div class="kicker">${final ? 'Endstand' : `Zwischenergebnis nach Runde ${s.roundIndex + 1}`}</div>
-        <div class="center card">
-          <div class="muted">Euer Platz</div>
-          <div class="rank-big">${me ? me.rank : '–'}.</div>
-          <div class="muted">von ${me ? me.teams : '–'} Teams · ${me ? me.score : 0} ${me && me.score === 1 ? 'Punkt' : 'Punkte'}${!final && me ? ` · diese Runde +${me.roundScore}` : ''}</div>
-          ${praise ? `<p style="margin:10px 0 0;font-weight:800;font-size:20px">${praise}</p>` : ''}
-        </div>
-        <ol class="rank">${top.map((r) => `<li class="${r.isMe ? 'me' : ''}"><span class="r">${r.rank}.</span><span class="n">${esc(r.name)}</span><span class="s">${r.score}</span></li>`).join('')}</ol>
-        ${!final && s.nextRoundName ? `<p class="center muted" style="margin-top:18px">Nächste Runde: <b>${esc(s.nextRoundName)}</b> – gleich geht's weiter.</p>` : ''}`;
-      return;
-    }
-  }
-
-  function notScanned(roundLabel) {
-    return `<div class="kicker">${roundLabel}</div><h1>${esc(state.roundName)}</h1>
-      <div class="card"><b>Scannt den QR-Code dieser Runde</b><br>
-      <span class="muted">${esc(codeError || 'Euer Team ist angemeldet, aber für diese Runde noch nicht freigeschaltet. Scannt den Code am großen Bildschirm.')}</span></div>`;
-  }
-
-  let barRaf = 0;
-  function animateBar(durationMs) {
-    cancelAnimationFrame(barRaf);
-    const bar = document.getElementById('bar');
-    const step = () => {
-      if (!bar.isConnected) return;
-      const left = Math.max(0, localDeadline - Date.now());
-      bar.style.width = (100 * left / durationMs) + '%';
-      if (left > 0) barRaf = requestAnimationFrame(step);
-    };
-    step();
-  }
-
-  async function answer(i) {
-    if (pending) return;
-    pending = true;
-    const s = state;
-    state.myAnswer = i; // sofort zeigen
-    const lk = s.roundIndex + ':' + s.question.number;
-    localAnswers[lk] = i;
-    lastRenderKey = '';
-    render();
-    const r = await api('/api/answer', { token: memToken, round: s.roundIndex, question: s.question.number - 1, choice: i });
-    pending = false;
-    if (!r.ok && r.status !== 409) { delete localAnswers[lk]; state.myAnswer = null; lastRenderKey = ''; render(); alert(r.data.error || 'Antwort wurde nicht angenommen.'); }
-  }
-
-  start();
-})();
+  // Wer schon einer Party beigetreten ist, kommt mit einem Tipp zurück ins Spiel.
+  // Bewusst ohne /api/state: Das würde während einer Frage die Zeit des Teams starten.
+  try { if (localStorage.getItem('quizparty.token')) document.getElementById('back').hidden = false; } catch {}
 </script>
 </body>
 </html>

@@ -1,9 +1,10 @@
-FROM node:22-alpine
+FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY server.js ./
+COPY lib ./lib
 COPY public ./public
 # Beispiel-Quizze; werden nur verwendet, wenn im Volume noch kein quizzes/-Ordner liegt
 COPY data/quizzes ./defaults/quizzes

@@ -4,29 +4,35 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Self-hosted party quiz ("Quiz-Party"). The host drives the game on a projector/TV at `/host`; teams play on their phones after scanning a QR code. No database, no cloud, no external fonts/CDNs/trackers — keep it that way. All UI text, comments and error messages are in German; match that.
+Self-hosted quiz ("Quiz-Party"). **Party mode** (the original and only finished mode): the host drives the game on a projector/TV at `/host`; teams play on their phones after scanning a QR code. Online modes are being added in phases: Solo (vs. a best-of list, guests allowed, only a logged-in player's first attempt per quiz counts), Battle (1 vs 1, turn-based, friend via invite link or random), Match (3–10 players live, auto-advancing, no moderator), login via email magic link, Google or Facebook, data in SQLite. Party must keep working offline with no login, mail or OAuth config; online features only switch on when their env vars are set. No external fonts/CDNs/trackers. All UI text, comments and error messages are in German; match that.
 
 ## Commands
 
 ```bash
 npm install
-HOST_PIN=1234 node server.js        # dev run, Node >= 20; omit HOST_PIN to get a random one printed
+HOST_PIN=1234 node server.js        # dev run, Node >= 22.13 (node:sqlite); omit HOST_PIN to get a random one printed
+npm test                            # node:test, no extra deps
+node --test test/party.test.js      # a single test file; add --test-name-pattern='…' for one test
 npm run check                       # validate every quiz in the pool, print estimated durations, exit 1 on errors
 docker compose up -d --build        # production; HOST_PIN comes from .env (required by compose)
 ```
 
-There is no build step, linter, or test suite; `npm run check` is the only automated check. The only dependency is `qrcode`.
+There is no build step or linter. The only dependency is `qrcode`. Tests in `test/` start `server.js` as a child process (`test/helpers.js` → `startServer()`, free port, temp `DATA_DIR`, fixture quizzes in `test/fixtures/quizzes`). `test/party.test.js` plays a complete party game over HTTP and is the regression guard for party behaviour.
 
-Env vars read by `server.js`: `PORT` (3000), `HOST_PIN`, `PUBLIC_URL` (base URL put in the QR code; otherwise derived from `Host`/`X-Forwarded-*`), `DATA_DIR`, `QUIZ_DIR` (default `$DATA_DIR/quizzes`), `MAX_TEAMS` (60).
+Env vars (read in `lib/config.js`, plus `HOST_PIN` in `lib/party.js`): `PORT` (3000), `HOST_PIN`, `PUBLIC_URL` (base URL put in the QR code; otherwise derived from `Host`/`X-Forwarded-*`), `DATA_DIR`, `QUIZ_DIR` (default `$DATA_DIR/quizzes`), `MAX_TEAMS` (60).
 
 ## Architecture
 
-- **`server.js`** — the whole backend: a plain `http` server (no framework) holding the game in a single in-memory `state` object. It is organized in sections: question loading/validation, game state, flow (state machine), client payloads, HTTP routes.
-- **`public/index.html`** (team phone UI, also served for `/r/<code>`) and **`public/host.html`** (host UI) — self-contained pages with inline CSS/JS. Both **poll** `/api/state` resp. `/api/host/state` (≈300 ms during questions, ≈800 ms otherwise); there are no websockets.
+Plain `http` server, no framework. `server.js` only serves pages, `/healthz` and hands the rest to the mode modules; a module answers a request by calling `send()`, and the router returns 404 if nothing did (`res.writableEnded`). SIGTERM/SIGINT flush the party state (`party.saveNow()`) and exit, which also makes `docker stop` fast.
+
+- **`lib/party.js`** — the whole party mode: one game per server in a single in-memory `state`, flow (state machine), client payloads and all `/api/state|join|enter|answer` and `/api/host/*` routes.
+- **`lib/quizzes.js`** pool loading/validation, **`lib/scoring.js`** ranking shared by all modes (`rankRows`, `distribution`), **`lib/http.js`** (`send`, `readBody`, `cleanName`, `baseUrl`), **`lib/config.js`** env.
+- **`lib/db.js`** — SQLite via built-in `node:sqlite` for the online modes, file `data/quiz.db`, opened lazily by `db.get()` (party alone never creates it). Schema changes are appended to `MIGRATIONS` (never edit an existing entry); `meta.schema_version` tracks progress, each migration runs in a transaction.
+- **Pages** (`public/`, self-contained with inline CSS/JS): `index.html` start page at `/`; `party.html` team phone UI at `/party` and `/r/<code>`; `host.html` host UI at `/host`. Party pages **poll** `/api/state` resp. `/api/host/state` (≈300 ms during questions, ≈800 ms otherwise); there are no websockets. Don't call `/api/state` from other pages: it starts the team's answer timer during a question.
 - **`data/quizzes/<topic>/<short|mid|long>.json`** — the question pool; a quiz id is `<topic>/<duration>`. Each file has `title`, `settings`, `rounds[].questions[]` (format in README.md). `loadQuestions()` validates a file and normalizes `correct` from a letter (A–D) to an index; validation errors are German, location-specific messages surfaced in the host menu. `listQuizzes()` scans the pool (including broken files, with `error`) and `estimateMinutes()` derives a duration; `DURATION_FITS` holds the target minutes per length (short 2–6, mid 7–15, long >15). The host picks topic and length in the menu (`/api/host/quizzes`, `/api/host/select`).
 - **`data/state.json`** — persisted game state, written debounced (150 ms) via tmp file + rename on every `save()`. `state.quiz` records the active quiz id; on startup the state is restored unless that quiz is gone/invalid or its round count changed, otherwise the first valid quiz in the pool starts fresh.
 
-### Game flow
+### Party game flow (`lib/party.js`)
 
 `state.phase` cycles `intro → question → reveal → … → standings → intro (next round) … → final`, driven by `next()` (host `POST /api/host/next`). A 250 ms interval auto-reveals when the deadline passes or every team in the round has answered.
 

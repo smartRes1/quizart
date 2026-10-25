@@ -1,0 +1,20 @@
+{
+  "title": "Testquiz",
+  "settings": { "secondsPerQuestion": 5, "pointsPerCorrect": 1 },
+  "rounds": [
+    {
+      "name": "Runde Eins",
+      "subtitle": "Zum Aufwärmen",
+      "questions": [
+        { "q": "Eins plus eins?", "options": ["1", "2", "3"], "correct": "B", "fact": "Zwei." },
+        { "q": "Farbe des Himmels?", "options": ["Blau", "Grün"], "correct": "A" }
+      ]
+    },
+    {
+      "name": "Runde Zwei",
+      "questions": [
+        { "q": "Doppelte Punkte?", "options": ["Ja", "Nein", "Vielleicht", "Egal"], "correct": "D", "points": 2 }
+      ]
+    }
+  ]
+}

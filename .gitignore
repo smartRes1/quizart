@@ -2,3 +2,5 @@
 node_modules/
 data/state.json
 data/state.json.tmp
+data/quiz.db
+data/quiz.db-*
