@@ -4,7 +4,16 @@
   "description": "Selbst gehostetes Party-Quiz mit QR-Code pro Runde und Live-Ranking",
   "main": "server.js",
   "private": true,
-  "scripts": { "start": "node server.js", "check": "node server.js --check", "test": "node --test \"test/**/*.test.js\"" },
-  "engines": { "node": ">=22.13" },
-  "dependencies": { "qrcode": "^1.5.4" }
+  "scripts": {
+    "start": "node server.js",
+    "check": "node server.js --check",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "nodemailer": "^10.2.1",
+    "qrcode": "^1.5.4"
+  }
 }

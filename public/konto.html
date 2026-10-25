@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15121c">
+<title>Mein Konto – Quiz-Party</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  .danger { background: none; border: 1px solid #ff8f8f; color: #ff8f8f; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+  dt { color: var(--muted); }
+  dd { margin: 0; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header><a class="home" href="/">← Quiz-Party</a></header>
+<main id="app"><p class="muted">Lade …</p></main>
+
+<script src="/common.js"></script>
+<script>
+(() => {
+  'use strict';
+  const app = document.getElementById('app');
+  const params = new URLSearchParams(location.search);
+  const welcome = params.has('neu');
+  const next = safePath(params.get('next'));
+  const LOGINS = { email: 'E-Mail-Link', google: 'Google', facebook: 'Facebook' };
+
+  async function render() {
+    const me = await account();
+    if (!me.user) { location.replace('/login?next=/konto'); return; }
+    const u = me.user;
+    app.innerHTML = welcome ? `
+        <div class="kicker">Willkommen</div>
+        <h1>Wie willst du heißen?</h1>
+        <p class="muted">Dieser Name steht in der Bestenliste und bei Battles. Deine E-Mail-Adresse sieht niemand.</p>`
+      : `<div class="kicker">Mein Konto</div><h1>${esc(u.name)}</h1>`;
+    app.innerHTML += `
+      <form id="nameForm" autocomplete="off">
+        <input type="text" id="name" maxlength="24" value="${u.nameChosen ? esc(u.name) : ''}" placeholder="${esc(u.name)}" required>
+        <button class="primary" id="save">${welcome ? "Los geht's" : 'Namen speichern'}</button>
+        <div class="error" id="err"></div>
+      </form>
+      ${welcome ? '' : `
+      <div class="card"><dl>
+        <dt>E-Mail</dt><dd>${u.email ? esc(u.email) : '–'}</dd>
+        <dt>Anmeldung</dt><dd>${u.logins.map((l) => LOGINS[l] || esc(l)).join(', ')}</dd>
+      </dl></div>
+      <button class="secondary" id="logout">Abmelden</button>
+      <button class="secondary danger" id="delete">Konto löschen</button>
+      <p class="muted" style="margin-top:10px;font-size:14px">Löschen entfernt dein Konto, deine Anmeldungen und deine Einträge in der Bestenliste. Das lässt sich nicht rückgängig machen.</p>`}
+      <p class="links"><a href="/datenschutz">Datenschutz</a><a href="/impressum">Impressum</a></p>`;
+
+    const input = document.getElementById('name');
+    if (welcome) input.focus();
+    document.getElementById('nameForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('err');
+      const r = await api('/api/me', { name: input.value });
+      if (!r.ok) { err.className = 'error'; err.textContent = r.data.error || 'Das hat nicht geklappt.'; return; }
+      if (welcome) { location.replace(next); return; }
+      err.className = 'ok-msg';
+      err.textContent = 'Gespeichert.';
+      app.querySelector('h1').textContent = r.data.user.name;
+    });
+    if (welcome) return;
+    document.getElementById('logout').addEventListener('click', async () => {
+      await api('/auth/logout', {});
+      location.href = '/';
+    });
+    document.getElementById('delete').addEventListener('click', async () => {
+      if (!confirm('Konto wirklich löschen? Deine Einträge in der Bestenliste verschwinden.')) return;
+      const r = await api('/api/me/delete', {});
+      if (r.ok) location.href = '/';
+      else alert(r.data.error || 'Das hat nicht geklappt.');
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

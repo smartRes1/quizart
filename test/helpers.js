@@ -61,6 +61,7 @@ async function startServer({ dataDir, env = {} } = {}) {
   return {
     base,
     dataDir: dir,
+    browser: () => browser(request),
     output: () => output,
     get: (p, headers) => request('GET', p, undefined, headers),
     post: (p, body = {}, headers) => request('POST', p, body, headers),
@@ -77,6 +78,33 @@ async function startServer({ dataDir, env = {} } = {}) {
   };
 }
 
+// Ein Browser mit eigenen Cookies (gid, sid, …), damit Tests Gast und Konto auseinanderhalten
+function browser(request) {
+  const jar = new Map();
+  async function go(method, p, body, headers = {}) {
+    const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+    const r = await request(method, p, body, cookie ? { Cookie: cookie, ...headers } : headers);
+    for (const c of r.headers.getSetCookie()) {
+      const [kv, ...attrs] = c.split(';');
+      const i = kv.indexOf('=');
+      const gone = attrs.some((a) => /^\s*Max-Age=0$/i.test(a));
+      if (gone) jar.delete(kv.slice(0, i)); else jar.set(kv.slice(0, i), kv.slice(i + 1));
+    }
+    return r;
+  }
+  return {
+    jar,
+    get: (p, headers) => go('GET', p, undefined, headers),
+    post: (p, body = {}, headers) => go('POST', p, body, headers),
+  };
+}
+
+// Anmelde-Link, den der Server ohne SMTP_URL in die Konsole schreibt
+function mailLink(output, email) {
+  const all = [...output.matchAll(/\[Mail an (\S+)\][^\n]*\n[\s\S]*?(http\S+\/login\?token=([\w-]+))/g)].filter((m) => m[1] === email.toLowerCase());
+  return all.length ? all[all.length - 1][3] : null;
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Wartet, bis fn() einen truthy Wert liefert
@@ -90,4 +118,4 @@ async function waitFor(fn, { timeout = 3000, interval = 50 } = {}) {
   }
 }
 
-module.exports = { startServer, sleep, waitFor, FIXTURE_QUIZZES };
+module.exports = { startServer, sleep, waitFor, mailLink, FIXTURE_QUIZZES };

@@ -32,3 +32,19 @@ function runTimer(bar, deadline, durationMs) {
   };
   step();
 }
+
+// Anmeldestatus rechts im Kopf: „Anmelden“ oder der eigene Name; liefert /api/me
+async function account(el) {
+  let me = { user: null, providers: {} };
+  try { me = (await api('/api/me')).data; } catch {}
+  if (el) {
+    const here = encodeURIComponent(location.pathname + location.search);
+    el.innerHTML = me.user
+      ? `<a class="user" href="/konto">${esc(me.user.name)}</a>`
+      : `<a class="user" href="/login?next=${here}">Anmelden</a>`;
+  }
+  return me;
+}
+
+// Ziel aus ?next=… nur, wenn es auf dieser Seite bleibt (sonst wäre z. B. javascript: möglich)
+const safePath = (p) => (/^\/(?![\/\\])/.test(p || '') ? p : '/');

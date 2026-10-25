@@ -7,7 +7,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { PORT, PUBLIC_DIR, PUBLIC_URL } = require('./lib/config');
+const { PORT, PUBLIC_DIR, PUBLIC_URL, SMTP_URL } = require('./lib/config');
 const { send } = require('./lib/http');
 const quizzes = require('./lib/quizzes');
 
@@ -16,6 +16,8 @@ if (process.argv.includes('--check')) process.exit(quizzes.checkPool());
 
 const party = require('./lib/party');
 const runs = require('./lib/runs');
+const board = require('./lib/board');
+const auth = require('./lib/auth');
 const db = require('./lib/db');
 
 const PAGES = {
@@ -23,6 +25,11 @@ const PAGES = {
   '/party': 'party.html',
   '/host': 'host.html',
   '/solo': 'play.html',
+  '/login': 'login.html',
+  '/konto': 'konto.html',
+  '/bestenliste': 'board.html',
+  '/datenschutz': 'datenschutz.html',
+  '/impressum': 'impressum.html',
 };
 // Gemeinsame Bausteine der neuen Seiten (Party-Seiten bleiben eigenständig)
 const ASSETS = {
@@ -49,7 +56,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && p === '/healthz') return send(res, 200, { ok: true });
 
-    for (const mod of [party, runs]) {
+    for (const mod of [party, runs, board, auth]) {
       if (!res.writableEnded) await mod.handle(req, res, url);
     }
     if (!res.writableEnded) send(res, 404, { error: 'not found' });
@@ -61,6 +68,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Quiz läuft auf Port ${PORT} – Party: ${party.summary()}.`);
   console.log(`Spielleitung: ${PUBLIC_URL || 'http://localhost:' + PORT}/host`);
+  const logins = ['E-Mail' + (SMTP_URL ? '' : ' (ohne SMTP_URL: Links nur in dieser Konsole)'), auth.PROVIDERS.google && 'Google', auth.PROVIDERS.facebook && 'Facebook'];
+  console.log(`Anmeldung: ${logins.filter(Boolean).join(', ')}`);
 });
 
 // docker stop schickt SIGTERM: Spielstand sichern, dann beenden

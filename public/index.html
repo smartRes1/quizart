@@ -35,12 +35,17 @@
   .btn { display: inline-block; text-decoration: none; font-weight: 800; padding: 11px 18px; border-radius: 12px; background: var(--accent, var(--c)); color: #120f17; }
   .soon { display: inline-block; font-size: 14px; font-weight: 700; color: var(--muted); border: 1px dashed var(--line); border-radius: 99px; padding: 6px 12px; }
   .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .user { font-weight: 700; font-size: 15px; color: var(--text); text-decoration: none; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+  .more { margin-left: 12px; color: var(--muted); font-size: 15px; }
+  .links { margin-top: 32px; font-size: 14px; color: var(--muted); text-align: center; }
+  .links a { color: var(--muted); margin: 0 8px; }
 </style>
 </head>
 <body>
 <div class="stripe"></div>
 <main>
-  <div class="kicker">Quiz-Party</div>
+  <div class="top"><div class="kicker">Quiz-Party</div><div id="acct"></div></div>
   <h1>Wie willst du spielen?</h1>
   <p class="lead">Allein, zu zweit, gegen viele oder mit Moderator am großen Bildschirm.</p>
 
@@ -54,7 +59,7 @@
       <div class="who">1 Spieler</div>
       <h2>Solo</h2>
       <p>Du gegen die Uhr. Es zählen Punkte und bei Gleichstand die Zeit. Ohne Anmeldung, sofort los.</p>
-      <a class="btn" href="/solo">Solo spielen</a>
+      <a class="btn" href="/solo">Solo spielen</a><a class="more" href="/bestenliste">Bestenliste</a>
     </section>
     <section class="mode battle">
       <div class="who">1 gegen 1</div>
@@ -76,11 +81,14 @@
       <p class="note">Mitspielen? Einfach den QR-Code am großen Bildschirm scannen.</p>
     </section>
   </div>
+  <p class="links"><a href="/datenschutz">Datenschutz</a><a href="/impressum">Impressum</a></p>
 </main>
+<script src="/common.js"></script>
 <script>
   // Wer schon einer Party beigetreten ist, kommt mit einem Tipp zurück ins Spiel.
   // Bewusst ohne /api/state: Das würde während einer Frage die Zeit des Teams starten.
   try { if (localStorage.getItem('quizparty.token')) document.getElementById('back').hidden = false; } catch {}
+  account(document.getElementById('acct'));
 </script>
 </body>
 </html>

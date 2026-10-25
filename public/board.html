@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15121c">
+<title>Bestenliste – Quiz-Party</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  .pick { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 4px; }
+  .pick select { flex: 1 1 180px; width: auto; }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header><a class="home" href="/">← Quiz-Party</a><div id="acct"></div></header>
+<main>
+  <div class="kicker">Solo</div>
+  <h1>Bestenliste</h1>
+  <p class="muted">Es zählt der erste Versuch jedes angemeldeten Spielers. Bei gleichen Punkten gewinnt die kürzere Zeit für die richtigen Antworten.</p>
+  <div class="pick"><select id="topicSel" aria-label="Thema"></select><select id="lenSel" aria-label="Länge"></select></div>
+  <div id="list"><p class="muted">Lade …</p></div>
+  <button class="primary" id="play">Dieses Quiz spielen</button>
+  <div class="error" id="err"></div>
+</main>
+
+<script src="/common.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  let pool = [];
+  const chosen = () => `${$('topicSel').value}/${$('lenSel').value}`;
+
+  function fillLengths(pickId) {
+    const list = pool.filter((q) => q.topic === $('topicSel').value);
+    $('lenSel').innerHTML = list.map((q) => `<option value="${esc(q.duration)}">${esc(q.durationLabel)} · ${plural(q.questions, 'Frage', 'Fragen')}</option>`).join('');
+    const pick = list.find((q) => q.id === pickId);
+    if (pick) $('lenSel').value = pick.duration;
+  }
+
+  async function load() {
+    const id = chosen();
+    history.replaceState(null, '', '/bestenliste?quiz=' + encodeURIComponent(id));
+    const r = await api('/api/board?quiz=' + encodeURIComponent(id));
+    if (!r.ok) { $('list').innerHTML = `<p class="error">${esc(r.data.error || 'Fehler')}</p>`; return; }
+    const b = r.data;
+    const rows = b.top.slice();
+    const row = (x) => `<li class="${x.isMe ? 'me' : ''}"><span class="r">${x.rank}.</span><span class="n">${esc(x.name)}</span><span class="s">${x.score}</span><span class="t">${seconds(x.ms)}</span></li>`;
+    $('list').innerHTML = !rows.length
+      ? '<p class="card muted">Noch niemand in der Liste. Spiel als Erste oder Erster!</p>'
+      : `<p class="muted">${plural(b.total, 'Spieler', 'Spieler')}</p>
+         <ol class="rank">${rows.map(row).join('')}${b.me && !rows.some((x) => x.isMe) ? '<li class="gap">…</li>' + row(b.me) : ''}</ol>`;
+  }
+
+  async function init() {
+    account($('acct'));
+    pool = (await api('/api/quizzes')).data;
+    const topics = [...new Set(pool.map((q) => q.topic))];
+    $('topicSel').innerHTML = topics.map((t) => `<option value="${esc(t)}">${esc(pool.find((q) => q.topic === t).title)}</option>`).join('');
+    const want = new URLSearchParams(location.search).get('quiz') || '';
+    const start = pool.find((q) => q.id === want) || pool[0];
+    if (!start) { $('list').innerHTML = '<p class="card">Noch keine Quizze im Pool.</p>'; return; }
+    $('topicSel').value = start.topic;
+    fillLengths(start.id);
+    load();
+  }
+
+  $('topicSel').addEventListener('change', () => { fillLengths(); load(); });
+  $('lenSel').addEventListener('change', load);
+  $('play').addEventListener('click', async () => {
+    $('play').disabled = true;
+    const r = await api('/api/run/start', { quizId: chosen() });
+    if (r.ok) { location.href = '/solo/' + r.data.id; return; }
+    $('play').disabled = false;
+    $('err').textContent = r.data.error || 'Das hat nicht geklappt.';
+  });
+  init();
+})();
+</script>
+</body>
+</html>

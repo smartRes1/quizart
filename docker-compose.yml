@@ -8,9 +8,16 @@ services:
     environment:
       # PIN für die Spielleitung (/host) – steht in .env (nicht im Repo), Vorlage: .env.example
       HOST_PIN: ${HOST_PIN:?HOST_PIN in .env setzen}
-      # Öffentliche Adresse, die im QR-Code steht (ohne Schrägstrich am Ende).
+      # Öffentliche Adresse für QR-Code, Anmelde-Links und Google/Facebook (ohne Schrägstrich am Ende).
       # Leer lassen = wird aus der aufgerufenen Adresse abgeleitet.
-      PUBLIC_URL: ""
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      # Anmeldung für die Online-Modi (optional, siehe README); leer = ausgeschaltet
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     volumes:
-      # Hier liegen questions.json (Fragen) und state.json (Spielstand)
+      # Fragen-Pool (quizzes/), Party-Spielstand (state.json), Konten und Ergebnisse (quiz.db)
       - ./data:/app/data

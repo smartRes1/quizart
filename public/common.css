@@ -56,3 +56,23 @@ button { font: inherit; cursor: pointer; }
 .fact { border-left: 4px solid var(--c); padding: 4px 0 4px 14px; color: #e9e2d8; }
 .rank-big { font-size: 72px; font-weight: 900; line-height: 1; margin: 6px 0; font-variant-numeric: tabular-nums; }
 .offline { position: fixed; left: 0; right: 0; bottom: 0; background: #5a1f22; color: #fff; text-align: center; padding: 8px; font-size: 14px; display: none; }
+header .user { font-weight: 700; font-size: 15px; text-decoration: none; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
+input[type=text], input[type=email], select {
+  width: 100%; font: inherit; font-size: 19px; padding: 13px 15px; border-radius: 12px;
+  border: 2px solid var(--line); background: var(--surface-2); color: var(--text); outline: none;
+}
+input:focus, select:focus { border-color: var(--c); }
+.ok-msg { color: #3fd68f; margin-top: 10px; }
+.note { border-left: 4px solid var(--line); padding: 2px 0 2px 12px; color: var(--muted); margin: 16px 0; }
+.note.good { border-color: var(--c); color: var(--text); }
+ol.rank { list-style: none; padding: 0; margin: 8px 0 0; }
+ol.rank li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; }
+ol.rank li:nth-child(odd) { background: var(--surface); }
+ol.rank li.me { background: var(--c); color: #1a1405; font-weight: 800; }
+ol.rank li.gap { background: none; justify-content: center; color: var(--muted); padding: 2px; }
+ol.rank .r { width: 34px; text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+ol.rank .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ol.rank .s { font-weight: 800; font-variant-numeric: tabular-nums; }
+ol.rank .t { width: 64px; text-align: right; font-size: 14px; opacity: .75; font-variant-numeric: tabular-nums; }
+.links { margin-top: 32px; font-size: 14px; color: var(--muted); text-align: center; }
+.links a { color: var(--muted); margin: 0 8px; }

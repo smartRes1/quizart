@@ -2,7 +2,7 @@
 
 Selbst gehostetes Party-Quiz: Die Spielleitung steuert am Beamer oder TV, die Teams spielen am Handy. Gescannt wird nur einmal zu Beginn, nach jeder Runde gibt es ein Zwischenergebnis, am Ende ein Siegerpodest.
 
-Keine Datenbank, keine Cloud, keine Tracker, keine externen Schriften. Ein Container, ein Ordner mit JSON-Dateien.
+Keine Cloud, keine Tracker, keine externen Schriften. Ein Container, ein Ordner mit JSON-Dateien. Party braucht weder Datenbank noch Anmeldung und läuft auch offline im WLAN; die Online-Modi speichern Konten und Ergebnisse in einer SQLite-Datei im selben Ordner.
 
 ## Starten
 
@@ -16,11 +16,11 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-- **Startseite:** `https://<deine-domain>/` zeigt alle Spielmodi. Fertig sind Party und Solo (`/solo`, ohne Anmeldung), Battle und Match folgen.
+- **Startseite:** `https://<deine-domain>/` zeigt alle Spielmodi. Fertig sind Party und Solo (`/solo`) mit Bestenliste, Battle und Match folgen.
 - **Spielleitung:** `https://<deine-domain>/host` (PIN aus `.env`)
 - **Teams:** scannen nur den QR-Code am Bildschirm, keine Adresse nötig
 
-Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach auf diesen Port weiterleiten. Der QR-Code verwendet die Adresse, unter der du `/host` aufrufst. Läuft das hinter einem Proxy mit anderer Adresse, `PUBLIC_URL` in `docker-compose.yml` setzen (z. B. `https://quiz.example.at`).
+Der Container lauscht auf Port 3000. Hinter Caddy, Traefik oder nginx einfach auf diesen Port weiterleiten. Der QR-Code verwendet die Adresse, unter der du `/host` aufrufst. Läuft das hinter einem Proxy mit anderer Adresse, `PUBLIC_URL` in `.env` setzen (z. B. `https://quiz.example.at`).
 
 **Lokal ohne Server** (z. B. im WLAN der Party): Laptop mit Docker, `docker compose up -d --build`, dann `/host` über die WLAN-IP aufrufen, also `http://192.168.x.x:3000/host`, nicht über `localhost`. Sonst steht `localhost` im QR-Code und die Handys finden nichts.
 
@@ -94,9 +94,23 @@ Tipps gegen verräterische Fragen:
 - Keine Wörter aus der Antwort in der Frage verwenden.
 - Den Buchstaben der richtigen Antwort über die Runde verteilen.
 
+## Solo, Anmeldung und Bestenliste
+
+Solo geht sofort, auch ohne Anmeldung. In die Bestenliste (`/bestenliste`, je Quiz) kommt nur, wer angemeldet ist, und zwar mit dem **ersten Versuch** je Quiz. Wer als Gast spielt und sich gleich danach anmeldet, bekommt dieses Ergebnis noch eingetragen, wenn es sein erster Versuch war. Spätere Versuche sind Training. Die Zeit misst der Server, die richtige Antwort sieht man erst nach dem Antworten.
+
+Anmelden geht ohne Passwort, in `.env` einzurichten (Vorlage: `.env.example`):
+
+- **E-Mail-Link:** immer verfügbar. Für den echten Versand `SMTP_URL` und `MAIL_FROM` setzen. Ohne `SMTP_URL` schreibt der Server die Links nur in sein Log (`docker compose logs`), praktisch zum Ausprobieren.
+- **Google:** in der Google Cloud Console einen OAuth-Client („Webanwendung“) anlegen, als Weiterleitungs-URI `<PUBLIC_URL>/auth/google/callback` eintragen, dann `GOOGLE_CLIENT_ID` und `GOOGLE_CLIENT_SECRET` setzen.
+- **Facebook:** unter developers.facebook.com eine App mit „Facebook Login“ anlegen, `<PUBLIC_URL>/auth/facebook/callback` als gültige Weiterleitungs-URI eintragen, dann `FACEBOOK_APP_ID` und `FACEBOOK_APP_SECRET` setzen. Als Datenschutz-URL und Anleitung zur Datenlöschung `<PUBLIC_URL>/datenschutz` angeben.
+
+Google und Facebook erscheinen nur, wenn ihre Werte gesetzt sind. Konten mit derselben bestätigten E-Mail-Adresse werden zusammengeführt. Spieler wählen selbst einen Namen für die Bestenliste und können ihr Konto unter `/konto` jederzeit löschen.
+
+**Vor dem öffentlichen Betrieb** `public/datenschutz.html` und `public/impressum.html` ausfüllen (markierte Platzhalter).
+
 ## Spielstand
 
-Liegt in `data/state.json` und überlebt einen Neustart des Containers. Zum kompletten Zurücksetzen: Menü → „Neues Spiel, alles löschen“ (oder die Datei löschen und den Container neu starten).
+Party: liegt in `data/state.json` und überlebt einen Neustart des Containers. Konten und Ergebnisse der Online-Modi liegen in `data/quiz.db`. Zum kompletten Zurücksetzen: Menü → „Neues Spiel, alles löschen“ (oder die Datei löschen und den Container neu starten).
 
 ## Ohne Docker
 

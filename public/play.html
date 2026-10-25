@@ -33,6 +33,7 @@
 <header>
   <a class="home" href="/">← Quiz-Party</a>
   <div class="score" id="hdrScore"></div>
+  <div id="acct"></div>
 </header>
 <main id="app"><p class="muted">Lade …</p></main>
 <div class="offline" id="offline">Keine Verbindung – versuche es erneut …</div>
@@ -43,6 +44,7 @@
   'use strict';
   const app = document.getElementById('app');
   const hdrScore = document.getElementById('hdrScore');
+  const acct = document.getElementById('acct');
   const offline = document.getElementById('offline');
   const RUN_KEY = 'quizart.solo'; // zuletzt begonnener Durchgang, für „Weiterspielen“
 
@@ -75,6 +77,8 @@
   async function renderPicker() {
     run = null;
     hdrScore.textContent = '';
+    acct.hidden = false;
+    account(acct);
     const [pool, last] = await Promise.all([call('/api/quizzes'), store.get(RUN_KEY) ? call('/api/run/' + store.get(RUN_KEY)) : null]);
     const open = last && last.ok && last.data.phase !== 'final' ? last.data : null;
     if (last && !open) store.del(RUN_KEY);
@@ -87,12 +91,13 @@
     app.innerHTML = `
       <div class="kicker">Solo</div>
       <h1>Wähle dein Quiz</h1>
-      <p class="muted">Jede Frage hat ein Zeitlimit. Es zählen die Punkte, bei Gleichstand die Zeit deiner richtigen Antworten.</p>
+      <p class="muted">Jede Frage hat ein Zeitlimit. Es zählen die Punkte, bei Gleichstand die Zeit deiner richtigen Antworten.
+        Angemeldet kommt dein erster Versuch je Quiz in die <a href="/bestenliste">Bestenliste</a>.</p>
       ${open ? `<div class="card resume"><b>Angefangen: ${esc(open.title)}</b><br>
         <span class="muted">Frage ${open.number} von ${open.total} · ${plural(open.score, 'Punkt', 'Punkte')}</span>
         <button class="primary" id="resume">Weiterspielen</button></div>` : ''}
       ${topics.length ? topics.map((t) => `
-        <div class="card topic"><h2>${esc(t.title)}</h2><div class="lens">${t.quizzes.map((q) => `
+        <div class="card topic"><h2>${esc(t.title)} <a class="muted" style="font-size:14px;font-weight:600" href="/bestenliste?quiz=${encodeURIComponent(t.quizzes[0].id)}">Bestenliste</a></h2><div class="lens">${t.quizzes.map((q) => `
           <button class="len" data-id="${esc(q.id)}"><b>${esc(q.durationLabel)}</b>
           <span>${plural(q.questions, 'Frage', 'Fragen')} · ca. ${q.minutes} Min</span></button>`).join('')}
         </div></div>`).join('') : '<p class="card">Noch keine Quizze im Pool.</p>'}
@@ -129,6 +134,8 @@
     run = data;
     clearTimeout(expireTimer);
     if (run.phase === 'final') store.del(RUN_KEY); else store.set(RUN_KEY, run.id);
+    acct.hidden = run.phase !== 'final';
+    if (run.phase === 'final') account(acct);
     hdrScore.innerHTML = run.phase === 'final' ? '' : `<b>${run.score}</b> ${run.score === 1 ? 'Punkt' : 'Punkte'}`;
     ({ intro, question, reveal, final })[run.phase]();
     window.scrollTo(0, 0);
@@ -153,6 +160,9 @@
       ${r.roundSubtitle ? `<p class="muted">${esc(r.roundSubtitle)}</p>` : ''}
       <div class="card">${plural(r.roundQuestions, 'Frage', 'Fragen')}${r.roundCount > 1 ? ` in dieser Runde, ${r.roundCount} Runden insgesamt` : ''}.
         <br><span class="muted">Die Zeit läuft, sobald die Frage erscheint.</span></div>
+      ${r.number > 1 ? '' : r.countsForBoard ? '<p class="note good">Dein erster Versuch – er zählt für die Bestenliste.</p>'
+        : r.guest ? '<p class="note">Du spielst als Gast. Melde dich danach an, dann kommt dein Ergebnis in die Bestenliste.</p>'
+        : '<p class="note">Training: Du hast dieses Quiz schon gespielt, in der Bestenliste zählt dein erster Versuch.</p>'}
       <button class="primary" id="go">${r.number === 1 ? "Los geht's" : 'Weiter'}</button>`;
     document.getElementById('go').addEventListener('click', next);
   }
@@ -213,6 +223,7 @@
           <div><b>${seconds(r.ms)}</b>Zeit für richtige</div>
         </div>
       </div>
+      ${boardNote(r)}
       <button class="primary" id="again">Nochmal spielen</button>
       <a class="secondary" href="/solo" id="other">Anderes Quiz</a>
       <h2 style="margin-top:28px">Deine Antworten</h2>
@@ -222,6 +233,15 @@
       </ol>`;
     document.getElementById('again').addEventListener('click', () => start(r.quizId));
     document.getElementById('other').addEventListener('click', (e) => { e.preventDefault(); history.pushState(null, '', '/solo'); renderPicker(); });
+  }
+
+  function boardNote(r) {
+    const link = `<a href="/bestenliste?quiz=${encodeURIComponent(r.quizId)}">Bestenliste ansehen</a>`;
+    if (r.board) return `<p class="note good"><b>Platz ${r.board.rank} von ${r.board.of}</b> in der Bestenliste. ${link}</p>`;
+    if (r.claimable) return `<p class="note good">Melde dich an, dann kommt dieses Ergebnis in die Bestenliste.</p>
+      <a class="primary" href="/login?next=${encodeURIComponent('/solo/' + r.id)}">Anmelden und eintragen</a>`;
+    if (r.guest) return `<p class="note">Als Gast zählt dein Ergebnis nicht für die Bestenliste. <a href="/login?next=/solo">Anmelden</a></p>`;
+    return `<p class="note">Training – zählt nicht für die Bestenliste, dort steht dein erster Versuch. ${link}</p>`;
   }
 
   // Tastatur am Computer: A–D oder 1–4 antworten, Enter geht weiter
