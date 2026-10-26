@@ -67,7 +67,7 @@
   }
 
   function route() {
-    const m = location.pathname.match(/^\/solo\/([\w-]+)$/);
+    const m = location.pathname.match(/^\/(?:solo|spiel)\/([\w-]+)$/);
     if (m) return openRun(m[1]);
     renderPicker();
   }
@@ -133,7 +133,7 @@
   function show(data) {
     run = data;
     clearTimeout(expireTimer);
-    if (run.phase === 'final') store.del(RUN_KEY); else store.set(RUN_KEY, run.id);
+    if (run.mode === 'solo') { if (run.phase === 'final') store.del(RUN_KEY); else store.set(RUN_KEY, run.id); }
     acct.hidden = run.phase !== 'final';
     if (run.phase === 'final') account(acct);
     hdrScore.innerHTML = run.phase === 'final' ? '' : `<b>${run.score}</b> ${run.score === 1 ? 'Punkt' : 'Punkte'}`;
@@ -160,7 +160,8 @@
       ${r.roundSubtitle ? `<p class="muted">${esc(r.roundSubtitle)}</p>` : ''}
       <div class="card">${plural(r.roundQuestions, 'Frage', 'Fragen')}${r.roundCount > 1 ? ` in dieser Runde, ${r.roundCount} Runden insgesamt` : ''}.
         <br><span class="muted">Die Zeit läuft, sobald die Frage erscheint.</span></div>
-      ${r.number > 1 ? '' : r.countsForBoard ? '<p class="note good">Dein erster Versuch – er zählt für die Bestenliste.</p>'
+      ${r.number > 1 ? '' : r.mode === 'battle' ? '<p class="note good">Duell: Dein Gegner spielt dieselben Fragen. Mehr Punkte gewinnt, bei Gleichstand die kürzere Zeit.</p>'
+        : r.countsForBoard ? '<p class="note good">Dein erster Versuch – er zählt für die Bestenliste.</p>'
         : r.guest ? '<p class="note">Du spielst als Gast. Melde dich danach an, dann kommt dein Ergebnis in die Bestenliste.</p>'
         : '<p class="note">Training: Du hast dieses Quiz schon gespielt, in der Bestenliste zählt dein erster Versuch.</p>'}
       <button class="primary" id="go">${r.number === 1 ? "Los geht's" : 'Weiter'}</button>`;
@@ -223,14 +224,15 @@
           <div><b>${seconds(r.ms)}</b>Zeit für richtige</div>
         </div>
       </div>
-      ${boardNote(r)}
+      ${r.mode === 'battle' ? `<a class="primary" href="/battle/${r.battleId}">Zum Duell</a>` : `${boardNote(r)}
       <button class="primary" id="again">Nochmal spielen</button>
-      <a class="secondary" href="/solo" id="other">Anderes Quiz</a>
+      <a class="secondary" href="/solo" id="other">Anderes Quiz</a>`}
       <h2 style="margin-top:28px">Deine Antworten</h2>
       <ol class="review">${r.review.map((x) => `
         <li class="${x.ok ? 'ok' : 'bad'}">${esc(x.text)}
           <div class="a">${x.ok ? `${esc(x.correct)} · ${seconds(x.ms)}` : `${x.mine === null ? 'Keine Antwort' : `Deine: ${esc(x.mine)}`} · Richtig: ${esc(x.correct)}`}</div></li>`).join('')}
       </ol>`;
+    if (r.mode === 'battle') return;
     document.getElementById('again').addEventListener('click', () => start(r.quizId));
     document.getElementById('other').addEventListener('click', (e) => { e.preventDefault(); history.pushState(null, '', '/solo'); renderPicker(); });
   }

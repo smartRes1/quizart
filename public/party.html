@@ -152,6 +152,8 @@
     const form = document.getElementById('joinForm');
     const input = document.getElementById('name');
     input.focus();
+    // Name von der Startseite vorschlagen (nur /api/me, das startet keine Fragezeit)
+    fetch('/api/me').then((r) => r.json()).then((me) => { if (me.user && !input.value) input.value = me.user.name; }).catch(() => {});
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('joinBtn');

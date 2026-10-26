@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15121c">
+<title>Duell – Quiz-Party</title>
+<link rel="stylesheet" href="/common.css">
+<style>
+  .lens { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .len { flex: 1 1 120px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font-weight: 800; }
+  .len:hover, .len:focus-visible { border-color: var(--a); }
+  .pick { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .pick select { flex: 1 1 160px; width: auto; }
+  .card h2 { margin: 0 0 4px; font-size: 20px; }
+  .accent { --c: var(--a); }
+  .accent .primary { background: var(--a); color: #fff; }
+  ul.battles { list-style: none; padding: 0; margin: 8px 0 0; }
+  ul.battles a { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; text-decoration: none; }
+  ul.battles li:nth-child(odd) a { background: var(--surface); }
+  ul.battles .who { flex: 1; min-width: 0; }
+  ul.battles .who b, ul.battles .who span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.battles .who span { color: var(--muted); font-size: 14px; }
+  .badge { flex: none; font-size: 13px; font-weight: 800; padding: 5px 10px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+  .badge.turn { background: var(--a); color: #fff; }
+  .badge.won { background: var(--ok); color: #fff; }
+  .badge.lost { background: var(--surface-2); color: #ff8f8f; }
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; text-align: center; }
+  .vs .side b { display: block; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vs .pts { font-size: 46px; font-weight: 900; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .vs .sub { color: var(--muted); font-size: 14px; }
+  .vs .x { color: var(--muted); font-weight: 900; }
+  .vs .win .pts { color: var(--ok); }
+  .linkbox { display: flex; gap: 8px; margin-top: 10px; }
+  .linkbox input { flex: 1; min-width: 0; font-size: 15px; }
+  .linkbox button { flex: none; border: 0; border-radius: 12px; padding: 0 16px; background: var(--surface-2); color: var(--text); font-weight: 800; border: 1px solid var(--line); }
+  table.review { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+  table.review td, table.review th { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  table.review th { color: var(--muted); font-weight: 700; font-size: 13px; }
+  table.review .m { width: 56px; text-align: center; font-weight: 900; }
+  .yes { color: var(--ok); } .no { color: #ff8f8f; }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header><a class="home" href="/">← Quiz-Party</a><div id="acct"></div></header>
+<main id="app" class="accent"><p class="muted">Lade …</p></main>
+
+<script src="/common.js"></script>
+<script>
+(() => {
+  'use strict';
+  const app = document.getElementById('app');
+  const path = location.pathname;
+  const fail = (msg) => { app.innerHTML = `<h1>Hoppla</h1><p class="muted">${esc(msg)}</p><a class="primary" href="/battle">Zu meinen Duellen</a>`; };
+  const loginLink = (label) => `<a class="primary" href="/login?next=${encodeURIComponent(path)}">${label}</a>`;
+  const badgeClass = (b) => (b.turn ? 'turn' : b.result === 'won' ? 'won' : b.result === 'lost' ? 'lost' : '');
+
+  // ---------- Übersicht: neues Duell starten, eigene Duelle
+  async function overview(me) {
+    if (!me.user) {
+      app.innerHTML = `<div class="kicker">Duell</div><h1>1 gegen 1</h1>
+        <p class="muted">Fordere Freunde heraus oder lass dir einen Gegner zuteilen. Ihr spielt dieselben Fragen, jeder wann er Zeit hat. Mehr Punkte gewinnt, bei Gleichstand die kürzere Zeit.</p>
+        ${loginLink('Anmelden und loslegen')}`;
+      return;
+    }
+    const [pool, list] = await Promise.all([api('/api/quizzes'), api('/api/battles')]);
+    const quizzes = pool.data;
+    const lengths = [...new Set(quizzes.map((q) => q.duration))];
+    const lengthLabel = (d) => quizzes.find((q) => q.duration === d).durationLabel;
+    const topics = [...new Set(quizzes.map((q) => q.topic))];
+    const battles = list.ok ? list.data : [];
+    app.innerHTML = `
+      <div class="kicker">Duell</div>
+      <h1>1 gegen 1</h1>
+      <div class="card">
+        <h2>Zufälliger Gegner</h2>
+        <p class="muted">Wir suchen jemanden, der ein Quiz offen hat, das du noch nicht kennst. Sonst startest du eines und der Nächste spielt gegen dich.</p>
+        <div class="lens">${lengths.map((d) => `<button class="len" data-d="${esc(d)}">${esc(lengthLabel(d))}</button>`).join('')}</div>
+      </div>
+      <div class="card">
+        <h2>Freund herausfordern</h2>
+        <p class="muted">Du spielst zuerst und schickst danach den Link, z. B. per WhatsApp.</p>
+        <div class="pick"><select id="topicSel" aria-label="Thema">${topics.map((t) => `<option value="${esc(t)}">${esc(quizzes.find((q) => q.topic === t).title)}</option>`).join('')}</select>
+          <select id="lenSel" aria-label="Länge"></select></div>
+        <button class="primary" id="invite">Herausforderung erstellen</button>
+      </div>
+      <div class="error" id="err"></div>
+      <h2 style="margin-top:24px">Meine Duelle</h2>
+      ${battles.length ? `<ul class="battles">${battles.map((b) => `
+        <li><a href="/battle/${b.id}"><span class="who"><b>${b.opponent ? 'gegen ' + esc(b.opponent.name) : b.kind === 'invite' ? 'Einladung offen' : 'Gegner wird gesucht'}</b>
+          <span>${esc(b.quiz.title)} · ${esc(b.quiz.durationLabel)}</span></span>
+          <span class="badge ${badgeClass(b)}">${esc(b.label)}</span></a></li>`).join('')}</ul>`
+        : '<p class="muted">Noch keine Duelle. Leg los!</p>'}`;
+
+    const fill = () => {
+      const opts = quizzes.filter((q) => q.topic === document.getElementById('topicSel').value);
+      document.getElementById('lenSel').innerHTML = opts.map((q) => `<option value="${esc(q.id)}">${esc(q.durationLabel)} · ${plural(q.questions, 'Frage', 'Fragen')}</option>`).join('');
+    };
+    if (topics.length) { fill(); document.getElementById('topicSel').addEventListener('change', fill); }
+    const err = (r) => { document.getElementById('err').textContent = r.data.error || 'Das hat nicht geklappt.'; };
+    app.querySelectorAll('.len').forEach((btn) => btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const r = await api('/api/battle/random', { duration: btn.dataset.d });
+      btn.disabled = false;
+      if (!r.ok) return err(r);
+      location.href = r.data.turn ? '/spiel/' + r.data.me.runId : '/battle/' + r.data.id;
+    }));
+    document.getElementById('invite').addEventListener('click', async (e) => {
+      e.target.disabled = true;
+      const r = await api('/api/battle', { quizId: document.getElementById('lenSel').value });
+      e.target.disabled = false;
+      if (!r.ok) return err(r);
+      location.href = '/battle/' + r.data.id;
+    });
+  }
+
+  // ---------- Ein Duell: Stand, Einladungslink, Ergebnis, Revanche
+  async function detail(id, me) {
+    if (!me.user) { app.innerHTML = `<h1>Duell</h1><p class="muted">Melde dich an, um dieses Duell zu sehen.</p>${loginLink('Anmelden')}`; return; }
+    const r = await api('/api/battle/' + id);
+    if (!r.ok) return fail(r.data.error);
+    const b = r.data;
+    const o = b.opponent;
+    const over = b.status === 'done' || b.status === 'expired';
+    const side = (p, win) => `<div class="side ${win ? 'win' : ''}"><b>${esc(p.name)}</b>
+      <div class="pts">${p.score !== undefined ? p.score : p.finished ? '✓' : '–'}</div>
+      <div class="sub">${p.score !== undefined ? `${p.correct} richtig · ${seconds(p.ms)}` : p.finished ? 'fertig' : 'spielt noch'}</div></div>`;
+    const headline = b.result === 'won' ? 'Gewonnen! 🏆' : b.result === 'lost' ? 'Verloren' : b.result === 'draw' ? 'Unentschieden' : b.status === 'expired' ? 'Abgelaufen' : b.turn ? 'Du bist dran' : 'Warte auf Gegner';
+    const days = Math.max(1, Math.ceil((b.expiresAt - Date.now()) / 86400000));
+    app.innerHTML = `
+      <div class="kicker">Duell · ${esc(b.quiz.title)} · ${esc(b.quiz.durationLabel)}</div>
+      <h1>${headline}</h1>
+      <div class="card vs">
+        ${side(b.me, b.result === 'won')}
+        <div class="x">vs</div>
+        ${o ? side(o, b.result === 'lost') : `<div class="side"><b>?</b><div class="pts">–</div><div class="sub">${b.kind === 'invite' ? 'Einladung offen' : 'wird gesucht'}</div></div>`}
+      </div>
+      ${b.turn ? `<a class="primary" href="/spiel/${esc(b.me.runId)}">Jetzt spielen</a>` : ''}
+      ${b.inviteUrl ? `<div class="card"><b>Schick diesen Link an deinen Gegner</b>
+        <div class="linkbox"><input type="text" id="link" readonly value="${esc(b.inviteUrl)}"><button id="share">${navigator.share ? 'Teilen' : 'Kopieren'}</button></div>
+        <p class="muted" style="margin:10px 0 0;font-size:14px">Wer den Link zuerst annimmt, spielt gegen dich.</p></div>` : ''}
+      ${!over ? `<p class="muted center">Läuft noch ${plural(days, 'Tag', 'Tage')}. Wer bis dahin nicht gespielt hat, verliert.</p>` : ''}
+      ${b.review ? `<h2 style="margin-top:24px">Frage für Frage</h2>
+        <table class="review"><tr><th>Frage</th><th class="m">Du</th><th class="m">${esc(o.name)}</th></tr>
+        ${b.review.map((q) => `<tr><td>${esc(q.text)}<div class="muted" style="font-size:13px">${esc(q.correct)}</div></td>
+          <td class="m ${q.me ? 'yes' : 'no'}">${q.me ? '✓' : '✗'}</td><td class="m ${q.opponent ? 'yes' : 'no'}">${q.opponent ? '✓' : '✗'}</td></tr>`).join('')}</table>` : ''}
+      ${b.canRematch ? '<button class="primary" id="rematch">Revanche</button>' : b.rematchId ? `<a class="primary" href="/battle/${b.rematchId}">Zur Revanche</a>` : ''}
+      <a class="secondary" href="/battle">Meine Duelle</a>
+      <div class="error" id="err"></div>`;
+    const share = document.getElementById('share');
+    if (share) share.addEventListener('click', async () => {
+      const text = `${b.me.name} fordert dich im Quiz heraus: ${b.quiz.title}`;
+      if (navigator.share) { try { await navigator.share({ title: 'Quiz-Party-Duell', text, url: b.inviteUrl }); } catch {} return; }
+      const input = document.getElementById('link');
+      input.select();
+      try { await navigator.clipboard.writeText(b.inviteUrl); } catch { document.execCommand('copy'); }
+      share.textContent = 'Kopiert ✓';
+    });
+    const rematch = document.getElementById('rematch');
+    if (rematch) rematch.addEventListener('click', async () => {
+      rematch.disabled = true;
+      const x = await api(`/api/battle/${b.id}/rematch`, {});
+      if (x.ok) { location.href = '/battle/' + x.data.battleId; return; }
+      rematch.disabled = false;
+      document.getElementById('err').textContent = x.data.error || 'Das hat nicht geklappt.';
+    });
+  }
+
+  // ---------- Einladung /b/<code>
+  async function invite(code, me) {
+    const r = await api('/api/battle/invite/' + code);
+    if (!r.ok) return fail(r.data.error);
+    const i = r.data;
+    if (i.state === 'mine') { location.replace('/battle/' + i.battleId); return; }
+    app.innerHTML = `
+      <div class="kicker">Herausforderung</div>
+      <h1>${esc(i.from)} fordert dich heraus</h1>
+      <div class="card"><b>${esc(i.quiz.title)}</b><br><span class="muted">${esc(i.quiz.durationLabel)}${i.quiz.questions ? ' · ' + plural(i.quiz.questions, 'Frage', 'Fragen') : ''}</span></div>
+      ${i.state === 'open' ? (me.user ? '<button class="primary" id="accept">Annehmen und spielen</button>' : loginLink('Anmelden und annehmen'))
+        : `<p class="note">${i.state === 'expired' ? 'Diese Einladung ist abgelaufen.' : 'Diese Einladung hat schon jemand anderes angenommen.'}</p><a class="primary" href="/battle">Selbst ein Duell starten</a>`}
+      <div class="error" id="err"></div>`;
+    const btn = document.getElementById('accept');
+    if (btn) btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const x = await api(`/api/battle/invite/${code}/accept`, {});
+      if (!x.ok) { btn.disabled = false; document.getElementById('err').textContent = x.data.error || 'Das hat nicht geklappt.'; return; }
+      const b = await api('/api/battle/' + x.data.battleId);
+      location.href = b.ok && b.data.turn ? '/spiel/' + b.data.me.runId : '/battle/' + x.data.battleId;
+    });
+  }
+
+  (async () => {
+    const me = await account(document.getElementById('acct'));
+    let m;
+    if ((m = path.match(/^\/battle\/(\d+)$/))) detail(m[1], me);
+    else if ((m = path.match(/^\/b\/([A-Za-z0-9]+)$/))) invite(m[1], me);
+    else overview(me);
+  })();
+})();
+</script>
+</body>
+</html>

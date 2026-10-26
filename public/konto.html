@@ -27,15 +27,17 @@
   const welcome = params.has('neu');
   const next = safePath(params.get('next'));
   const LOGINS = { email: 'E-Mail-Link', google: 'Google', facebook: 'Facebook' };
+  let deviceOnly = false;
 
   async function render() {
     const me = await account();
     if (!me.user) { location.replace('/login?next=/konto'); return; }
     const u = me.user;
+    deviceOnly = !u.logins.length;
     app.innerHTML = welcome ? `
         <div class="kicker">Willkommen</div>
         <h1>Wie willst du heißen?</h1>
-        <p class="muted">Dieser Name steht in der Bestenliste und bei Battles. Deine E-Mail-Adresse sieht niemand.</p>`
+        <p class="muted">Dieser Name steht in der Bestenliste und bei Duellen. Deine E-Mail-Adresse sieht niemand.</p>`
       : `<div class="kicker">Mein Konto</div><h1>${esc(u.name)}</h1>`;
     app.innerHTML += `
       <form id="nameForm" autocomplete="off">
@@ -46,8 +48,14 @@
       ${welcome ? '' : `
       <div class="card"><dl>
         <dt>E-Mail</dt><dd>${u.email ? esc(u.email) : '–'}</dd>
-        <dt>Anmeldung</dt><dd>${u.logins.map((l) => LOGINS[l] || esc(l)).join(', ')}</dd>
+        <dt>Anmeldung</dt><dd>${deviceOnly ? 'nur mit Namen, auf diesem Gerät' : u.logins.map((l) => LOGINS[l] || esc(l)).join(', ')}</dd>
       </dl></div>
+      <div class="card" id="linkCard">
+        <b>Auf einem weiteren Gerät anmelden</b>
+        <p class="muted" style="font-size:14px">Zeigt einen QR-Code. Scanne ihn mit dem anderen Handy, dann bist du dort mit demselben Konto angemeldet.</p>
+        <button class="secondary" id="link">QR-Code zeigen</button>
+        <div id="linkOut"></div>
+      </div>
       <button class="secondary" id="logout">Abmelden</button>
       <button class="secondary danger" id="delete">Konto löschen</button>
       <p class="muted" style="margin-top:10px;font-size:14px">Löschen entfernt dein Konto, deine Anmeldungen und deine Einträge in der Bestenliste. Das lässt sich nicht rückgängig machen.</p>`}
@@ -66,7 +74,17 @@
       app.querySelector('h1').textContent = r.data.user.name;
     });
     if (welcome) return;
+    document.getElementById('link').addEventListener('click', async (e) => {
+      const r = await api('/api/me/link', {});
+      const out = document.getElementById('linkOut');
+      if (!r.ok) { out.innerHTML = `<p class="error">${esc(r.data.error || 'Das hat nicht geklappt.')}</p>`; return; }
+      e.target.textContent = 'Neuen QR-Code zeigen';
+      // Das SVG kommt von unserem Server (qrcode), nicht aus Eingaben
+      out.innerHTML = `<div style="background:#fff;border-radius:12px;padding:10px;max-width:260px;margin:12px auto">${r.data.svg}</div>
+        <p class="muted" style="font-size:14px;overflow-wrap:anywhere">Gilt ${r.data.minutes} Minuten und nur einmal: ${esc(r.data.url)}</p>`;
+    });
     document.getElementById('logout').addEventListener('click', async () => {
+      if (deviceOnly && !confirm('Dein Konto hängt nur an diesem Gerät. Nach dem Abmelden kommst du nur zurück, wenn du dich vorher auf einem anderen Gerät per QR-Code angemeldet hast. Trotzdem abmelden?')) return;
       await api('/auth/logout', {});
       location.href = '/';
     });

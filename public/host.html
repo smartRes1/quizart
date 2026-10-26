@@ -101,7 +101,7 @@
   .teamrow span { flex: 1; } .teamrow .st { flex: none; color: var(--muted); font-size: 14px; }
   .teamrow button { padding: 6px 12px; background: #4a2025; }
   .pin { text-align: center; }
-  .pin input { font: inherit; font-size: 32px; letter-spacing: .3em; text-align: center; width: 220px; padding: 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); color: var(--text); }
+  .pin input { font: inherit; font-size: 32px; letter-spacing: .3em; text-align: center; width: 260px; padding: 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); color: var(--text); }
   .err { color: #ff8f8f; margin-top: 10px; white-space: pre-line; }
   .note { color: var(--muted); font-size: 14px; margin-top: 10px; }
   .pick { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -131,6 +131,7 @@
 <div class="overlay" id="pinOv">
   <div class="panel pin">
     <h3>Spielleitung</h3>
+    <p style="color:var(--muted)">Moderator-PIN eingeben. Als Moderator angemeldet geht es ohne PIN.</p>
     <form id="pinForm"><input id="pinIn" inputmode="numeric" autocomplete="off" placeholder="PIN"><div class="err" id="pinErr"></div>
     <p><button class="go" style="margin-top:12px">Anmelden</button></p></form>
   </div>
@@ -189,7 +190,7 @@
     pin = $('pinIn').value.trim();
     const r = await api('state');
     if (r.ok) { store.set('quizparty.pin', pin); $('pinOv').classList.remove('show'); begin(); }
-    else askPin('Falscher PIN');
+    else askPin(r.data.error || 'Falscher PIN');
   });
 
   let started = false;
@@ -458,9 +459,8 @@
     else if (e.key === 'Escape') $('qrOv').classList.remove('show');
   });
 
-  if (pin) {
-    api('state').then((r) => { if (r.ok) begin(); else askPin(); }).catch(() => askPin());
-  } else askPin();
+  // Mit gespeicherter PIN oder als angemeldeter Moderator (Cookie) direkt los
+  api('state').then((r) => { if (r.ok) begin(); else askPin(); }).catch(() => askPin());
 })();
 </script>
 </body>

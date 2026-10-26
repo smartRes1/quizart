@@ -33,7 +33,7 @@ test('Party: komplettes Spiel', async (t) => {
     assert.equal(page.status, 200);
     assert.match(page.data, /joinForm/);
     assert.match((await s.get('/party')).data, /joinForm/);
-    assert.match((await s.get('/')).data, /Wie willst du spielen/);
+    assert.match((await s.get('/')).data, /Wie heißt du/);
     assert.equal((await s.get('/gibtsnicht')).status, 404);
   });
 

@@ -27,7 +27,7 @@ async function startServer({ dataDir, env = {} } = {}) {
   const dir = dataDir || fs.mkdtempSync(path.join(os.tmpdir(), 'quizart-test-'));
   const port = await freePort();
   const child = spawn(process.execPath, [path.join(ROOT, 'server.js')], {
-    env: { ...process.env, PORT: String(port), DATA_DIR: dir, QUIZ_DIR: FIXTURE_QUIZZES, HOST_PIN: '4711', PUBLIC_URL: '', ...env },
+    env: { ...process.env, PORT: String(port), DATA_DIR: dir, QUIZ_DIR: FIXTURE_QUIZZES, HOST_PIN: '4711', PUBLIC_URL: '', MAIL_LOG: '1', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   // Nach kill() ist exitCode null und nur signalCode gesetzt
@@ -105,6 +105,43 @@ function mailLink(output, email) {
   return all.length ? all[all.length - 1][3] : null;
 }
 
+// Richtige Antworten der Test-Quizze; die Reihenfolge ist je Durchgang gemischt, darum über den Text
+const RIGHT = { 'Eins plus eins?': '2', 'Farbe des Himmels?': 'Blau', 'Doppelte Punkte?': 'Egal', 'Ja?': 'Ja', 'Drei mal drei?': '9' };
+
+// Spielt einen Durchgang zu Ende: neu per quizId oder einen bestehenden per runId;
+// wrong = so viele Fragen am Anfang absichtlich falsch
+async function play(b, { quizId, runId }, wrong = 0) {
+  let v = runId ? (await b.get(`/api/run/${runId}`)).data : (await b.post('/api/run/start', { quizId })).data;
+  const id = v.id;
+  while (v.phase !== 'final') {
+    if (v.phase === 'question') {
+      const right = v.question.options.indexOf(RIGHT[v.question.text]);
+      const choice = wrong-- > 0 ? (right + 1) % v.question.options.length : right;
+      v = (await b.post(`/api/run/${id}/answer`, { index: v.number - 1, choice })).data;
+    } else {
+      v = (await b.post(`/api/run/${id}/next`, { step: v.step })).data;
+    }
+  }
+  return v;
+}
+
+// Anmelden per E-Mail-Link (aus dem Server-Log); mit name gleich den Spielernamen setzen
+async function login(s, b, email, next, name) {
+  const r = await b.post('/auth/email', { email, next });
+  if (r.status !== 200) throw new Error(`Anmelde-Link: ${r.status} ${JSON.stringify(r.data)}`);
+  const token = await waitFor(() => mailLink(s.output(), email));
+  const v = await b.post('/auth/email/verify', { token });
+  if (name) await b.post('/api/me', { name });
+  return v;
+}
+
+// Neues Konto nur mit Namen (hängt am Cookie dieses Browsers)
+async function nameLogin(b, name, next) {
+  const r = await b.post('/auth/name', { name, next });
+  if (r.status !== 200) throw new Error(`Anmeldung mit Namen: ${r.status} ${JSON.stringify(r.data)}`);
+  return r;
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Wartet, bis fn() einen truthy Wert liefert
@@ -118,4 +155,4 @@ async function waitFor(fn, { timeout = 3000, interval = 50 } = {}) {
   }
 }
 
-module.exports = { startServer, sleep, waitFor, mailLink, FIXTURE_QUIZZES };
+module.exports = { startServer, sleep, waitFor, mailLink, login, nameLogin, play, RIGHT, FIXTURE_QUIZZES };

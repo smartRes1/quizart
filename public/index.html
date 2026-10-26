@@ -5,90 +5,153 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#15121c">
 <title>Quiz-Party</title>
+<link rel="stylesheet" href="/common.css">
 <style>
-  :root {
-    --bg: #15121c; --surface: #221d2b; --surface-2: #2d2738; --line: #3a3346;
-    --text: #f6f1ea; --muted: #a59cb3;
-    --a: #e5383b; --b: #12a06a; --c: #f2b705; --d: #2b6ce4;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
-  body {
-    background: var(--bg); color: var(--text); min-height: 100vh;
-    font: 17px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
-  }
-  .stripe { height: 6px; background: linear-gradient(90deg, var(--a) 0 33.3%, #fff 33.3% 66.6%, var(--b) 66.6% 83.3%, var(--c) 83.3%); }
-  main { padding: 28px 16px 48px; max-width: 760px; margin: 0 auto; }
-  h1 { font-size: clamp(34px, 7vw, 54px); line-height: 1.02; margin: 4px 0 8px; font-weight: 900; letter-spacing: -0.02em; }
-  .kicker { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-  .lead { color: var(--muted); margin: 0 0 24px; font-size: 18px; }
-  .back { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 2px solid var(--b); border-radius: 16px; padding: 14px 16px; margin: 0 0 22px; }
+  main { max-width: 640px; padding-top: 28px; }
+  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 36px; }
+  .top .user { font-weight: 700; font-size: 15px; text-decoration: none; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hero { font-size: clamp(38px, 9vw, 60px); line-height: 1.02; margin: 18px 0 10px; font-weight: 900; letter-spacing: -0.02em; }
+  .lead { color: var(--muted); font-size: 18px; margin: 0 0 22px; }
+  .big-input { font-size: 24px !important; padding: 18px !important; text-align: center; font-weight: 700; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #0d2a1f; background: var(--b); border-radius: 99px; padding: 3px 9px; margin-left: 8px; vertical-align: middle; }
+  .back { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--surface); border: 2px solid var(--b); border-radius: 16px; padding: 14px 16px; margin: 0 0 18px; }
   .back span { flex: 1 1 200px; }
-  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px; }
-  .mode { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px 18px 18px; overflow: hidden; }
-  .mode::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; background: var(--accent); }
-  .mode h2 { margin: 0 0 6px; font-size: 24px; font-weight: 850; }
-  .mode p { margin: 0 0 14px; color: var(--muted); }
-  .mode .who { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); margin-bottom: 6px; }
-  .solo { --accent: var(--c); } .battle { --accent: var(--a); } .match { --accent: var(--d); } .party { --accent: var(--b); }
-  .btn { display: inline-block; text-decoration: none; font-weight: 800; padding: 11px 18px; border-radius: 12px; background: var(--accent, var(--c)); color: #120f17; }
-  .soon { display: inline-block; font-size: 14px; font-weight: 700; color: var(--muted); border: 1px dashed var(--line); border-radius: 99px; padding: 6px 12px; }
-  .note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
-  .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-  .user { font-weight: 700; font-size: 15px; color: var(--text); text-decoration: none; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); max-width: 50vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
-  .more { margin-left: 12px; color: var(--muted); font-size: 15px; }
-  .links { margin-top: 32px; font-size: 14px; color: var(--muted); text-align: center; }
+  .back a { flex: none; font-weight: 800; text-decoration: none; background: var(--b); color: #0d2a1f; border-radius: 12px; padding: 10px 16px; }
+  .modes { display: grid; gap: 14px; }
+  .mode { position: relative; display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 20px 20px 26px; text-decoration: none; overflow: hidden; }
+  .mode::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: var(--accent); }
+  a.mode:active { transform: scale(.99); }
+  .mode .who { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+  .mode h2 { margin: 4px 0 6px; font-size: 30px; font-weight: 900; }
+  .mode p { margin: 0; color: var(--muted); }
+  .mode .go { position: absolute; right: 20px; top: 22px; font-size: 28px; font-weight: 900; color: var(--accent); }
+  .mode .extra { margin-top: 10px; font-weight: 700; color: var(--text); }
+  .solo { --accent: var(--c); } .duel { --accent: var(--a); } .party { --accent: var(--b); }
+  .code { display: flex; gap: 10px; margin-top: 14px; }
+  .code input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: .15em; }
+  .code button { flex: none; border: 0; border-radius: 12px; padding: 0 18px; font-weight: 800; background: var(--b); color: #0d2a1f; }
+  .party .host { display: block; margin-top: 12px; text-align: center; text-decoration: none; font-weight: 800; padding: 14px; border-radius: 12px; background: var(--b); color: #0d2a1f; }
+  .mod { margin-top: 26px; text-align: center; }
+  .mod summary { color: var(--muted); cursor: pointer; font-size: 15px; list-style: none; }
+  .mod summary::-webkit-details-marker { display: none; }
+  .mod form { max-width: 320px; margin: 12px auto 0; }
+  .mod input { text-align: center; letter-spacing: .3em; font-size: 22px; }
+  .linkbtn { background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 15px; padding: 6px; }
+  .links { margin-top: 28px; font-size: 14px; color: var(--muted); text-align: center; }
   .links a { color: var(--muted); margin: 0 8px; }
 </style>
 </head>
 <body>
 <div class="stripe"></div>
-<main>
-  <div class="top"><div class="kicker">Quiz-Party</div><div id="acct"></div></div>
-  <h1>Wie willst du spielen?</h1>
-  <p class="lead">Allein, zu zweit, gegen viele oder mit Moderator am großen Bildschirm.</p>
+<main id="app"><p class="muted">Lade …</p></main>
 
-  <div class="back" id="back" hidden>
-    <span>Ihr spielt gerade bei einer Party mit?</span>
-    <a class="btn" href="/party" style="--accent: var(--b)">Zurück zur Party</a>
-  </div>
-
-  <div class="modes">
-    <section class="mode solo">
-      <div class="who">1 Spieler</div>
-      <h2>Solo</h2>
-      <p>Du gegen die Uhr. Es zählen Punkte und bei Gleichstand die Zeit. Ohne Anmeldung, sofort los.</p>
-      <a class="btn" href="/solo">Solo spielen</a><a class="more" href="/bestenliste">Bestenliste</a>
-    </section>
-    <section class="mode battle">
-      <div class="who">1 gegen 1</div>
-      <h2>Battle</h2>
-      <p>Fordere Freunde heraus oder spiel gegen jemanden auf der Plattform. Jeder spielt, wann er Zeit hat.</p>
-      <span class="soon">Bald verfügbar</span>
-    </section>
-    <section class="mode match">
-      <div class="who">3 bis 10 Spieler, live</div>
-      <h2>Match</h2>
-      <p>Alle spielen gleichzeitig dieselben Fragen. Das Quiz läuft von selbst, ohne Moderator.</p>
-      <span class="soon">Bald verfügbar</span>
-    </section>
-    <section class="mode party">
-      <div class="who">Teams mit Moderator</div>
-      <h2>Party</h2>
-      <p>Die Spielleitung zeigt das Quiz am Beamer oder TV, die Teams spielen am Handy.</p>
-      <a class="btn" href="/host">Party moderieren</a>
-      <p class="note">Mitspielen? Einfach den QR-Code am großen Bildschirm scannen.</p>
-    </section>
-  </div>
-  <p class="links"><a href="/datenschutz">Datenschutz</a><a href="/impressum">Impressum</a></p>
-</main>
 <script src="/common.js"></script>
 <script>
+(() => {
+  'use strict';
+  const app = document.getElementById('app');
+  const $ = (id) => document.getElementById(id);
+  const links = '<p class="links"><a href="/datenschutz">Datenschutz</a><a href="/impressum">Impressum</a></p>';
+
   // Wer schon einer Party beigetreten ist, kommt mit einem Tipp zurück ins Spiel.
   // Bewusst ohne /api/state: Das würde während einer Frage die Zeit des Teams starten.
-  try { if (localStorage.getItem('quizparty.token')) document.getElementById('back').hidden = false; } catch {}
-  account(document.getElementById('acct'));
+  const inParty = !!store.get('quizparty.token');
+  const backBanner = () => inParty
+    ? '<div class="back"><span>Ihr spielt gerade bei einer Party mit?</span><a href="/party">Zurück zur Party</a></div>' : '';
+
+  // ---------- Noch kein Name: groß eintragen, bleibt in diesem Browser
+  function renderName(me) {
+    const other = me.providers.email || me.providers.google || me.providers.facebook;
+    app.innerHTML = `
+      <div class="kicker">Quiz-Party</div>
+      <h1 class="hero">Wie heißt du?</h1>
+      <p class="lead">Dein Name bleibt in diesem Browser gespeichert. Kein Passwort, keine E-Mail.</p>
+      ${backBanner()}
+      <form id="nameForm" autocomplete="off">
+        <input type="text" id="name" class="big-input" maxlength="24" placeholder="Dein Name" required>
+        <button class="primary" id="go">Los geht's</button>
+        <div class="error" id="err"></div>
+      </form>
+      <p class="muted" style="font-size:14px;margin-top:18px">Schon auf einem anderen Handy dabei? Dort unter „Mein Konto“ den QR-Code zeigen und mit diesem Handy scannen.${other ? ' Oder <a href="/login">anders anmelden</a>.' : ''}</p>
+      ${links}`;
+    $('name').focus();
+    $('nameForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('go').disabled = true;
+      const r = await api('/auth/name', { name: $('name').value, next: '/' });
+      if (r.ok) return start();
+      $('go').disabled = false;
+      $('err').textContent = r.data.error || 'Das hat nicht geklappt.';
+    });
+  }
+
+  // ---------- Mit Namen: Modus wählen
+  function renderModes(me) {
+    const u = me.user;
+    app.innerHTML = `
+      <div class="top"><div class="kicker">Quiz-Party</div><a class="user" href="/konto">${esc(u.name)}</a></div>
+      <h1 class="hero">Hallo, ${esc(u.name)}!${u.isHost ? '<span class="badge">Moderator</span>' : ''}</h1>
+      <p class="lead">Was spielen wir?</p>
+      ${backBanner()}
+      <div class="modes">
+        <a class="mode solo" href="/solo">
+          <div class="who">1 Spieler</div><h2>Solo</h2><span class="go">→</span>
+          <p>Du gegen die Bestenliste. Es zählt nur dein erster Versuch je Quiz.</p>
+        </a>
+        <a class="mode duel" href="/battle">
+          <div class="who">1 gegen 1</div><h2>Duell</h2><span class="go">→</span>
+          <p>Fordere jemanden heraus. Beide spielen dieselben Fragen, jeder wann er Zeit hat.</p>
+          <div class="extra" id="turns" hidden></div>
+        </a>
+        <section class="mode party">
+          <div class="who">Teams am großen Bildschirm</div><h2>Party</h2>
+          <p>Der Moderator startet das Spiel am Beamer oder TV. Zum Mitspielen den QR-Code dort scannen oder den Code eingeben.</p>
+          <form class="code" id="codeForm" autocomplete="off">
+            <input type="text" id="code" maxlength="10" placeholder="Code" aria-label="Party-Code">
+            <button>Mitspielen</button>
+          </form>
+          ${u.isHost ? '<a class="host" href="/host">Party moderieren</a>' : ''}
+        </section>
+      </div>
+      <div class="mod">${u.isHost
+        ? '<button class="linkbtn" id="unhost">Moderator-Rechte abgeben</button>'
+        : `<details><summary>Moderator werden</summary>
+            <form id="pinForm" autocomplete="off">
+              <input type="text" id="pin" inputmode="numeric" placeholder="PIN" required>
+              <button class="secondary">Bestätigen</button>
+              <div class="error" id="pinErr"></div>
+            </form></details>`}
+      </div>
+      ${links}`;
+
+    $('codeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const code = $('code').value.trim().replace(/[^A-Za-z0-9]/g, '');
+      if (code) location.href = '/r/' + code.toUpperCase();
+    });
+    if (u.isHost) {
+      $('unhost').addEventListener('click', async () => { await api('/api/me/host', { off: true }); start(); });
+    } else {
+      $('pinForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const r = await api('/api/me/host', { pin: $('pin').value });
+        if (r.ok) return start();
+        $('pinErr').textContent = r.data.error || 'Das hat nicht geklappt.';
+      });
+    }
+    api('/api/battles').then((r) => {
+      const n = r.ok ? r.data.filter((b) => b.turn).length : 0;
+      if (n) { $('turns').textContent = `Du bist ${n}× dran`; $('turns').hidden = false; }
+    }).catch(() => {});
+  }
+
+  async function start() {
+    const me = await account();
+    if (me.user) renderModes(me);
+    else renderName(me);
+  }
+  start();
+})();
 </script>
 </body>
 </html>
